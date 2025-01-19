@@ -2,12 +2,12 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
-import { Navbar } from "@/components/navbar";
+//import { Navbar } from "@/components/navbar";
 
 export const metadata = {
-  title: "AI SDK Python Streaming Preview",
+  title: "Chat with Raghu",
   description:
-    "Use the Data Stream Protocol to stream chat completions from a Python endpoint (FastAPI) and display them using the useChat hook in your Next.js application.",
+    "Chat with Assistant AI",
   openGraph: {
     images: [
       {
@@ -35,7 +35,7 @@ export default function RootLayout({
       <head></head>
       <body className={cn(GeistSans.className, "antialiased dark")}>
         <Toaster position="top-center" richColors />
-        <Navbar />
+        {/* <Navbar /> */}
         {children}
       </body>
     </html>

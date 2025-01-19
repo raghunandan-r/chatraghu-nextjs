@@ -1,144 +1,95 @@
 import os
 import json
-from typing import List
+from typing import List, Optional
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
-from .utils.prompt import ClientMessage, convert_to_openai_messages
-from .utils.tools import get_current_weather
+import requests
+from datetime import datetime
+import base64
+
+load_dotenv(".env")
 
 
-load_dotenv(".env.local")
+class ClientMessage(BaseModel):
+    role: str
+    content: str
+    thread_id: Optional[str] = None
+
 
 app = FastAPI()
 
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
+
+
+def generate_thread_id():
+    # Generate 8 random bytes
+    random_bytes = os.urandom(8)    
+    # Convert to base64 and clean up any URL-unsafe characters
+    random_chars = base64.b64encode(random_bytes).decode('utf-8') \
+        .replace('+', '') \
+        .replace('/', '')[:8]  # Take first 8 chars    
+    # Add timestamp
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')    
+    return f"{random_chars}-{timestamp}"
 
 
 class Request(BaseModel):
     messages: List[ClientMessage]
 
 
-available_tools = {
-    "get_current_weather": get_current_weather,
-}
 
-def do_stream(messages: List[ChatCompletionMessageParam]):
-    stream = client.chat.completions.create(
-        messages=messages,
-        model="gpt-4o",
+def stream_text(chat_request: dict, protocol: str = 'data'):
+    # Get API key from environment variable
+    api_key = os.getenv('API_KEY')
+    api_url = os.getenv('API_URL')
+    if not api_key:
+        raise ValueError("X_API_KEY environment variable is not set")
+    
+    with requests.post(
+        api_url, 
+        json=chat_request,
         stream=True,
-        tools=[{
-            "type": "function",
-            "function": {
-                "name": "get_current_weather",
-                "description": "Get the current weather at a location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "latitude": {
-                            "type": "number",
-                            "description": "The latitude of the location",
-                        },
-                        "longitude": {
-                            "type": "number",
-                            "description": "The longitude of the location",
-                        },
-                    },
-                    "required": ["latitude", "longitude"],
-                },
-            },
-        }]
-    )
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+            "X-API-Key": api_key  # Add API key to headers
+        }
+    ) as response:
+        response.raise_for_status()
 
-    return stream
-
-def stream_text(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-    draft_tool_calls = []
-    draft_tool_calls_index = -1
-
-    stream = client.chat.completions.create(
-        messages=messages,
-        model="gpt-4o",
-        stream=True,
-        tools=[{
-            "type": "function",
-            "function": {
-                "name": "get_current_weather",
-                "description": "Get the current weather at a location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "latitude": {
-                            "type": "number",
-                            "description": "The latitude of the location",
-                        },
-                        "longitude": {
-                            "type": "number",
-                            "description": "The longitude of the location",
-                        },
-                    },
-                    "required": ["latitude", "longitude"],
-                },
-            },
-        }]
-    )
-
-    for chunk in stream:
-        for choice in chunk.choices:
-            if choice.finish_reason == "stop":
+                # Process the stream
+        for line in response.iter_lines():
+            if not line:
                 continue
-
-            elif choice.finish_reason == "tool_calls":
-                for tool_call in draft_tool_calls:
-                    yield '9:{{"toolCallId":"{id}","toolName":"{name}","args":{args}}}\n'.format(
-                        id=tool_call["id"],
-                        name=tool_call["name"],
-                        args=tool_call["arguments"])
-
-                for tool_call in draft_tool_calls:
-                    tool_result = available_tools[tool_call["name"]](
-                        **json.loads(tool_call["arguments"]))
-
-                    yield 'a:{{"toolCallId":"{id}","toolName":"{name}","args":{args},"result":{result}}}\n'.format(
-                        id=tool_call["id"],
-                        name=tool_call["name"],
-                        args=tool_call["arguments"],
-                        result=json.dumps(tool_result))
-
-            elif choice.delta.tool_calls:
-                for tool_call in choice.delta.tool_calls:
-                    id = tool_call.id
-                    name = tool_call.function.name
-                    arguments = tool_call.function.arguments
-
-                    if (id is not None):
-                        draft_tool_calls_index += 1
-                        draft_tool_calls.append(
-                            {"id": id, "name": name, "arguments": ""})
+                
+            # Remove "data: " prefix and parse JSON
+            line = line.decode('utf-8')
+            if line.startswith('data: '):
+                line = line[6:]
+                
+            if line == '[DONE]':
+                # Handle end of stream
+                yield 'e:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}\n'
+                break
+                
+            try:
+                chunk = json.loads(line)
+                for choice in chunk['choices']:
+                    # Handle normal text content
+                    if 'delta' in choice and 'content' in choice['delta']:
+                        yield f'0:{json.dumps(choice["delta"]["content"])}\n'
 
                     else:
-                        draft_tool_calls[draft_tool_calls_index]["arguments"] += arguments
+                        yield '0:{text}\n'.format(text=json.dumps(choice.delta.content))
 
-            else:
-                yield '0:{text}\n'.format(text=json.dumps(choice.delta.content))
 
-        if chunk.choices == []:
-            usage = chunk.usage
-            prompt_tokens = usage.prompt_tokens
-            completion_tokens = usage.completion_tokens
 
-            yield 'e:{{"finishReason":"{reason}","usage":{{"promptTokens":{prompt},"completionTokens":{completion}}},"isContinued":false}}\n'.format(
-                reason="tool-calls" if len(
-                    draft_tool_calls) > 0 else "stop",
-                prompt=prompt_tokens,
-                completion=completion_tokens
-            )
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON: {e}")
+                continue
 
 
 
@@ -146,8 +97,20 @@ def stream_text(messages: List[ChatCompletionMessageParam], protocol: str = 'dat
 @app.post("/api/chat")
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     messages = request.messages
-    openai_messages = convert_to_openai_messages(messages)
+    last_message = messages[-1]
+    
+    # Get or generate thread_id
+    thread_id = last_message.thread_id if last_message.thread_id else generate_thread_id()
+    
+    # Create a simplified request format
+    chat_request = {
+        "messages": [{
+            "role": last_message.role,
+            "content": last_message.content,
+            "thread_id": thread_id  # Now properly generated
+        }]
+    }
 
-    response = StreamingResponse(stream_text(openai_messages, protocol))
+    response = StreamingResponse(stream_text(chat_request, protocol))
     response.headers['x-vercel-ai-data-stream'] = 'v1'
     return response

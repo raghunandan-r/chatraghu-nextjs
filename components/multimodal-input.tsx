@@ -21,14 +21,14 @@ import { Textarea } from "./ui/textarea";
 
 const suggestedActions = [
   {
-    title: "What is the weather",
-    label: "in San Francisco?",
-    action: "What is the weather in San Francisco?",
+    title: "Tell me about",
+    label: "yourself",
+    action: "Tell me about yourself",
   },
   {
-    title: "How is python useful",
-    label: "for AI engineers?",
-    action: "How is python useful for AI engineers?",
+    title: "What is your experience",
+    label: "with LLMs?",
+    action: "What is your experience with LLMs?",
   },
 ];
 
@@ -149,7 +149,7 @@ export function MultimodalInput({
 
       <Textarea
         ref={textareaRef}
-        placeholder="Send a message..."
+        placeholder="Ask, and Raghu will respond..."
         value={input}
         onChange={handleInput}
         className={cn(
