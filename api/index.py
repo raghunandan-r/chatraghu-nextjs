@@ -13,15 +13,14 @@ import base64
 
 # load_dotenv(".env")
 
+thread_id_store = {}  # In-memory store for thread IDs
 
 class ClientMessage(BaseModel):
     role: str
     content: str
     thread_id: Optional[str] = None
 
-
 app = FastAPI()
-
 
 
 def generate_thread_id():
@@ -55,7 +54,7 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
         headers={
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
-            "X-API-Key": api_key  # Add API key to headers
+            "X-API-Key": api_key            
         }
     ) as response:
         response.raise_for_status()
@@ -97,20 +96,27 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
 @app.post("/api/chat")
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     messages = request.messages
-    last_message = messages[-1]
     
-    # Get or generate thread_id
-    thread_id = last_message.thread_id if last_message.thread_id else generate_thread_id()
+    # Get a unique identifier for this client session (can be first message content hash)
+    session_key = hash(messages[0].content)  # Simple way to identify a session
     
-    # Create a simplified request format
+    # Get thread_id from store or generate new one
+    if session_key not in thread_id_store:
+        thread_id_store[session_key] = generate_thread_id()
+    
+    thread_id = thread_id_store[session_key]
+    
+    # Create a simplified request format with just the last message
     chat_request = {
         "messages": [{
-            "role": last_message.role,
-            "content": last_message.content,
-            "thread_id": thread_id  # Now properly generated
+            "role": messages[-1].role,
+            "content": messages[-1].content,
+            "thread_id": thread_id
         }]
     }
 
-    response = StreamingResponse(stream_text(chat_request, protocol))
+    response = StreamingResponse(
+        stream_text(chat_request, protocol)
+    )
     response.headers['x-vercel-ai-data-stream'] = 'v1'
     return response
