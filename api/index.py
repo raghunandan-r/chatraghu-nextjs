@@ -11,7 +11,7 @@ import requests
 from datetime import datetime
 import base64
 
-load_dotenv(".env")
+# load_dotenv(".env")
 
 thread_id_store = {}  # In-memory store for thread IDs
 
