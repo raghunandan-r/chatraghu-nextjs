@@ -21,14 +21,14 @@ import { Textarea } from "./ui/textarea";
 
 const suggestedActions = [
   {
-    title: "Tell me about",
-    label: "yourself",
-    action: "Tell me about yourself",
+    title: "What can you",
+    label: "do?",
+    action: "What can you do?",
   },
   {
-    title: "What is your experience",
-    label: "with LLMs?",
-    action: "What is your experience with LLMs?",
+    title: "Why did you",
+    label: "build this?",
+    action: "Why did you build this?",
   },
 ];
 
@@ -147,53 +147,58 @@ export function MultimodalInput({
         </div>
       )}
 
-      <Textarea
-        ref={textareaRef}
-        placeholder="Ask, and Raghu will respond..."
-        value={input}
-        onChange={handleInput}
-        className={cn(
-          "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base bg-muted",
-          className,
-        )}
-        rows={3}
-        autoFocus
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          placeholder="Ask, and Raghu will respond..."
+          value={input}
+          onChange={handleInput}
+          maxLength={200}
+          className={cn(
+            "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base bg-muted pb-8",
+            className,
+          )}
+          rows={3}
+          autoFocus
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
 
-            if (isLoading) {
-              toast.error("Please wait for the model to finish its response!");
-            } else {
-              submitForm();
+              if (isLoading) {
+                toast.error("Please wait for the model to finish its response!");
+              } else {
+                submitForm();
+              }
             }
-          }
-        }}
-      />
-
-      {isLoading ? (
-        <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
-          onClick={(event) => {
-            event.preventDefault();
-            stop();
-            setMessages((messages) => sanitizeUIMessages(messages));
           }}
-        >
-          <StopIcon size={14} />
-        </Button>
-      ) : (
-        <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
-          onClick={(event) => {
-            event.preventDefault();
-            submitForm();
-          }}
-          disabled={input.length === 0}
-        >
-          <ArrowUpIcon size={14} />
-        </Button>
-      )}
+        />
+        <div className="absolute bottom-2 right-12 text-xs text-muted-foreground">
+          {input.length}/200
+        </div>
+        {isLoading ? (
+          <Button
+            className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
+            onClick={(event) => {
+              event.preventDefault();
+              stop();
+              setMessages((messages) => sanitizeUIMessages(messages));
+            }}
+          >
+            <StopIcon size={14} />
+          </Button>
+        ) : (
+          <Button
+            className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
+            onClick={(event) => {
+              event.preventDefault();
+              submitForm();
+            }}
+            disabled={input.length === 0}
+          >
+            <ArrowUpIcon size={14} />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
