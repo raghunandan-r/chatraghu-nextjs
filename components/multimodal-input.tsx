@@ -21,9 +21,9 @@ import { Textarea } from "./ui/textarea";
 
 const suggestedActions = [
   {
-    title: "What can you",
-    label: "do?",
-    action: "What can you do?",
+    title: "Tell me about",
+    label: "yourself?",
+    action: "Tell me about yourself?",
   },
   {
     title: "Why did you",
@@ -107,11 +107,11 @@ export function MultimodalInput({
 
   const submitForm = useCallback(() => {
     handleSubmit(undefined, {});
-    setLocalStorageInput("");
+      setLocalStorageInput("");
 
-    if (width && width > 768) {
-      textareaRef.current?.focus();
-    }
+      if (width && width > 768) {
+        textareaRef.current?.focus();
+      }
   }, [handleSubmit, setLocalStorageInput, width]);
 
   return (
@@ -153,7 +153,7 @@ export function MultimodalInput({
           placeholder="Ask, and Raghu will respond..."
           value={input}
           onChange={handleInput}
-          maxLength={200}
+          maxLength={100}
           className={cn(
             "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base bg-muted pb-8",
             className,
@@ -173,7 +173,7 @@ export function MultimodalInput({
           }}
         />
         <div className="absolute bottom-2 right-12 text-xs text-muted-foreground">
-          {input.length}/200
+          {input.length}/100
         </div>
         {isLoading ? (
           <Button

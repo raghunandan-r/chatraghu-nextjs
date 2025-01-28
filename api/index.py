@@ -41,38 +41,32 @@ class Request(BaseModel):
 
 
 def stream_text(chat_request: dict, protocol: str = 'data'):
-    # Get API key from environment variable
+
     api_key = os.getenv('API_KEY')
     api_url = os.getenv('API_URL')
     if not api_key:
         raise ValueError("X_API_KEY environment variable is not set")
     
-    with requests.post(
-        api_url, 
-        json=chat_request,
-        stream=True,
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "text/event-stream",
-            "X-API-Key": api_key            
-        }
-    ) as response:
-        response.raise_for_status()
-
-                # Process the stream
-        for line in response.iter_lines():
-            if not line:
-                continue
-                
-            # Remove "data: " prefix and parse JSON
-            line = line.decode('utf-8')
+    try:
+        response = requests.post(
+            api_url, 
+            json=chat_request,
+            stream=True,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+                "X-API-Key": api_key            
+            }
+        )
+        print(f"Response status: {response.status_code}")  # Debug log
+        response.raise_for_status()        
+        for line in response.iter_lines(decode_unicode=True):            
             if line.startswith('data: '):
                 line = line[6:]
                 
             if line == '[DONE]':
-                # Handle end of stream
-                yield 'e:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}\n'
-                break
+                 continue
+                
                 
             try:
                 chunk = json.loads(line)
@@ -80,16 +74,16 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
                     # Handle normal text content
                     if 'delta' in choice and 'content' in choice['delta']:
                         yield f'0:{json.dumps(choice["delta"]["content"])}\n'
-
                     else:
-                        yield '0:{text}\n'.format(text=json.dumps(choice.delta.content))
-
-
-
+                      yield '0:{text}\n'.format(text=json.dumps(choice.delta.content))
+            
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON: {e}")
-                continue
+                
 
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection error: {e}")  # Debug log
+        raise
 
 
 
@@ -100,7 +94,6 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
     # Get a unique identifier for this client session (can be first message content hash)
     session_key = hash(messages[0].content)  # Simple way to identify a session
     
-    # Get thread_id from store or generate new one
     if session_key not in thread_id_store:
         thread_id_store[session_key] = generate_thread_id()
     
@@ -116,7 +109,9 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
     }
 
     response = StreamingResponse(
-        stream_text(chat_request, protocol)
+        stream_text(chat_request, protocol),
+        headers={
+            'x-vercel-ai-data-stream': 'v1'
+        }
     )
-    response.headers['x-vercel-ai-data-stream'] = 'v1'
     return response
