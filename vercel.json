@@ -1,6 +1,7 @@
 {
   "functions": {
     "api/**": {
+      "maxDuration": 75,
       "excludeFiles": "{.next,.git,node_modules}/**"
     }
   }
