@@ -14,7 +14,7 @@ from utils.logger import logger
 import uuid
 import urllib3
 
-load_dotenv(".env")
+# load_dotenv(".env")
 
 thread_id_store = {}  # In-memory store for thread IDs
 
