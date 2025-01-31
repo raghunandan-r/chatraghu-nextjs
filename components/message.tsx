@@ -2,6 +2,7 @@
 
 import type { Message } from "ai";
 import { motion } from "framer-motion";
+import { useEffect, useState } from 'react';
 
 import { SparklesIcon } from "./icons";
 import { Markdown } from "./markdown";
@@ -91,10 +92,28 @@ export const PreviewMessage = ({
 
 export const ThinkingMessage = () => {
   const role = "assistant";
+  const [currentText, setCurrentText] = useState("Thinking...");
+  
+  const loadingTexts = [
+    "Thinking...",
+    "Retrieving relevant information...",
+    "Styling the response...",
+    "!@#$%^&*...",
+  ];
+
+  useEffect(() => {
+    let currentIndex = 0;
+    const intervalId = setInterval(() => {
+      currentIndex = (currentIndex + 1) % loadingTexts.length;
+      setCurrentText(loadingTexts[currentIndex]);
+    }, 1200); // Change text every 800ms
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, []);
 
   return (
     <motion.div
-      className="w-full mx-auto max-w-3xl px-4 group/message "
+      className="w-full mx-auto max-w-3xl px-4 group/message"
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
       data-role={role}
@@ -113,7 +132,7 @@ export const ThinkingMessage = () => {
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
+            {currentText}
           </div>
         </div>
       </div>

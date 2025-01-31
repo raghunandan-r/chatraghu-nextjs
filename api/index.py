@@ -12,8 +12,9 @@ from datetime import datetime
 import backoff
 from utils.logger import logger
 import uuid
+import urllib3
 
-# load_dotenv(".env")
+load_dotenv(".env")
 
 thread_id_store = {}  # In-memory store for thread IDs
 
@@ -72,7 +73,8 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
             "protocol": protocol
         })
         
-        response = requests.post(
+        session = create_retry_session()  # Use the retry session we defined earlier
+        response = session.post(
             api_url, 
             json=chat_request,
             stream=True,
@@ -81,7 +83,7 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
                 "Accept": "text/event-stream",
                 "X-API-Key": api_key            
             },
-            timeout=(10, 30) # (connect timeout, read timeout)
+            timeout=(15, 30)
         )
         logger.debug(f"Response status: {response.status_code}")
         response.raise_for_status()        
@@ -113,26 +115,26 @@ def stream_text(chat_request: dict, protocol: str = 'data'):
                     "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
                 })
                 continue
+
+    except (requests.exceptions.ChunkedEncodingError, 
+            requests.exceptions.ConnectionError,
+            urllib3.exceptions.ProtocolError) as e:
+        logger.warning(f"Stream ended prematurely: {str(e)}", extra={
+            "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
+        })        
             
-    except requests.exceptions.Timeout as e:
-        logger.error("Request timeout", extra={
-            "error": str(e),
-            "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
-        })
-        raise
-    except requests.exceptions.ConnectionError as e:
-        logger.error("Connection error", extra={
-            "error": str(e),
-            "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
-        })
-        raise
+
     except Exception as e:
-        logger.exception("Unexpected error", extra={
+        logger.exception("Unexpected error in stream_text", extra={
             "error_type": type(e).__name__,
             "error": str(e),
             "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
         })
-        raise
+
+    
+    finally:
+        if 'response' in locals():
+            response.close()
 
 @app.post("/api/chat")
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
