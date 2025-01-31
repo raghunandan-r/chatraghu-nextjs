@@ -14,7 +14,30 @@ from utils.logger import logger
 import uuid
 import urllib3
 
-# load_dotenv(".env")
+import sentry_sdk
+from sentry_sdk import capture_exception, capture_message
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
+
+
+# Load .env files only if they exist
+if os.path.exists('.env'):
+    load_dotenv('.env')
+else:
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),    
+        environment="production",  
+        traces_sample_rate=1.0,   
+        profiles_sample_rate=1.0, 
+        integrations=[
+            FastApiIntegration(),
+            AsyncioIntegration(),
+        ],
+        send_default_pii=True,
+        _experiments={
+            "continuous_profiling_auto_start": True,        
+        },
+    )
 
 thread_id_store = {}  # In-memory store for thread IDs
 

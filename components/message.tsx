@@ -106,7 +106,7 @@ export const ThinkingMessage = () => {
     const intervalId = setInterval(() => {
       currentIndex = (currentIndex + 1) % loadingTexts.length;
       setCurrentText(loadingTexts[currentIndex]);
-    }, 1200); // Change text every 800ms
+    }, 1500); // Change text every __00ms
 
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);

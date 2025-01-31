@@ -40,3 +40,4 @@ websockets==12.0
 requests>=2.25.1
 backoff>=1.10.0
 python-json-logger>=2.0.7
+sentry-sdk[fastapi]==2.20.0
