@@ -66,49 +66,65 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
     })
     
     transport = AsyncHTTPTransport(retries=3)
-    async with AsyncClient(transport=transport) as client:
+    
+    async with AsyncClient(
+        transport=transport,
+        timeout=httpx.Timeout(
+            connect=10,
+            read=30,
+            write=10,
+            pool=30
+        )
+    ) as client:
         try:
             async with client.stream(
                 "POST",
                 api_url, 
                 json=chat_request,                
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "text/event-stream",
-                "X-API-Key": api_key            
-            }            
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "text/event-stream",
+                    "X-API-Key": api_key            
+                }
             ) as response:
-                logger.debug(f"Response status: {response.status_code}")
-                response.raise_for_status()        
-                try:    
+                try:
                     async for line in response.aiter_lines():
                         if not line or line.isspace():
                             continue
-                        
-                        if line.startswith('data: '):
-                            line = line[6:]
-                        if line == '[DONE]':
-                            continue
-                        chunk = json.loads(line)
-                        for choice in chunk.get('choices', []):  # Use .get() for safer access
-                            if choice.get('delta', {}).get('content'):  # Safely access nested dict
+                            
+                        try:
+                            chunk = json.loads(line)
+                            for choice in chunk.get('choices', []):
+                                if choice.get('delta', {}).get('content') == '[DONE]':
+                                    continue
                                 yield f'0:{json.dumps(choice["delta"]["content"])}\n'
-                            else:
-                                print("index.py---------------- content: ", choice.get('delta', {}))    
-                                yield f"0:{json.dumps(choice.get('delta', {}).get('content', ''))}\n"
-                except httpx.StreamClosed:
-                    logger.info("Stream closed by client disconnect")
+                                
+                        except json.JSONDecodeError:
+                            logger.warning("Malformed JSON received", extra={
+                                "line_preview": line[:100],
+                                "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
+                            })
+                            continue
+                            
+                except httpx.ReadTimeout:
+                    logger.warning("Stream read timeout", extra={
+                        "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
+                    })
                     return
-                except asyncio.CancelledError:
-                    logger.info("Stream cancelled by client disconnect")
+                    
+                except httpx.StreamError:
+                    logger.warning("Stream ended unexpectedly", extra={
+                        "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
+                    })
                     return
-
+                    
         except Exception as e:
-            logger.exception("Unexpected error in stream_text", extra={
+            logger.exception("Error in stream_text", extra={
                 "error_type": type(e).__name__,
                 "error": str(e),
                 "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
             })
+            raise
 
 
 
