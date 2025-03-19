@@ -17,8 +17,6 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
 
-
-
 # Load .env files only if they exist
 if os.path.exists('.env'):
     load_dotenv('.env')
