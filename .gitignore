@@ -13,9 +13,10 @@
 /out/
 
 # python
-venv/
+.venv/
 .env
 __pycache__
+plan/
 
 # production
 /build
