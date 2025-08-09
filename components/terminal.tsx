@@ -653,11 +653,9 @@ export default function Terminal() {
             display: none; /* Hide the small banner by default */
         }
         .fat-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 8px; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
+        .ghost-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 8px; height: 1.2em; border-radius: 1px; }
 
-        .raghu-prefix { color: rgb(243, 196, 27); font-weight: 700; }
-        /* optional, slightly higher specificity:
-        .stream .raghu-prefix { color: rgb(243, 196, 27); font-weight: 700; }
-        */
+        :global(.raghu-prefix) { color: rgb(243, 196, 27); font-weight: 700; }
 
         /* Define the blinking animation */
         @keyframes blink {
