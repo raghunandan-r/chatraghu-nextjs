@@ -1,5 +1,5 @@
-import { Chat } from "@/components/chat";
+import Terminal from '@/components/terminal';
 
 export default function Page() {
-  return <Chat />;
+  return <Terminal />;
 }
