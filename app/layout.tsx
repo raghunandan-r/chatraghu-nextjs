@@ -1,27 +1,17 @@
-import "./globals.css";
-import { GeistSans } from "geist/font/sans";
-import { Toaster } from "sonner";
-import { cn } from "@/lib/utils";
-//import { Navbar } from "@/components/navbar";
+export const metadata = { title: 'Chat with Raghu', description: 'Chat with Assistant AI' };
 
-export const metadata = {
-  title: "Chat with Raghu",
-  description: "Chat with Assistant AI",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head></head>
-      <body className={cn(GeistSans.className, "antialiased dark")}>
-        <Toaster position="top-center" richColors />
-        {/* <Navbar /> */}
-        {children}
-      </body>
+      <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              'html,body{height:100%;margin:0;}body{background:#000;color:#fff;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}*{box-sizing:border-box}',
+          }}
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
