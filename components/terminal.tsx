@@ -360,8 +360,8 @@ export default function Terminal() {
         </div>
         <div className="term">
           <div className="intro-block" aria-hidden="false">
-            <pre id="banner-large">{BANNER_large}</pre>
-            <pre id="banner-small">{BANNER_small}</pre>
+            <pre id="banner-large" style={{ display: 'block' }}>{BANNER_large}</pre>
+            <pre id="banner-small" style={{ display: 'none' }}>{BANNER_small}</pre>
             <div className="help">  
               <div className="col">
                 <span className="cmd">Type to start</span>
