@@ -1,21 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { dev, isServer }) => {
-    // The Preact swap happens only in production, for the client bundle.
-    if (!dev && !isServer) {
-      config.resolve.alias = {
-        ...(config.resolve.alias || {}),
-        react: 'preact/compat',
-        'react-dom': 'preact/compat',
-        'react-dom/client': 'preact/compat',
-        'react/jsx-runtime': 'preact/jsx-runtime',
-        'react/jsx-dev-runtime': 'preact/jsx-runtime',
-        'react-dom/test-utils': 'preact/test-utils',
-        'styled-jsx/style': 'preact/compat/lib/styled-jsx/style',
-      };
-    }
-    return config;
-  },
   rewrites: async () => {
     return [
       {

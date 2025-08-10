@@ -1,10 +1,6 @@
 # Raghu.fyi
 
-Preact based front end for my personal portfolio. 
-Moved away from Vercel's template towards a lower size client-side website, with TUI style. 
-
-## Quick answers
-- Preact swap: Low risk after removing heavy GUI libs (framer-motion, tsparticles, some Radix patterns).
+Next.js based front end for my personal portfolio. 
 - Frontend↔API: Frontend calls `/api/chat`; Next rewrites to FastAPI in dev and `/api/` in prod.
 
 ## Goals
