@@ -2,6 +2,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { GitIcon, LinkedInIcon } from '@/components/icons';
+import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 
 const BUFFER_CAP = 512 * 1024; // keep last 512KB
 const BANNER_large = String.raw`
@@ -38,7 +39,7 @@ type PendingNode =
   | { type: 'newline' };
 
 export default function Terminal() {
-  const outRef = useRef<HTMLPreElement>(null);
+  const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLPreElement>();
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [spinnerChar, setSpinnerChar] = useState<string>('');
@@ -56,7 +57,6 @@ export default function Terminal() {
   const measureEndRef = useRef<HTMLSpanElement>(null);
   const caretRef = useRef<HTMLSpanElement>(null);
   const selectionRef = useRef<HTMLSpanElement>(null);
-
   // Loading text + streaming coordination
   const [statusText, setStatusText] = useState('');
   const [startedStreaming, setStartedStreaming] = useState(false);
@@ -157,16 +157,7 @@ export default function Terminal() {
       return newLines;
     });
 
-    // Handle scroll-to-bottom
-    if (outRef.current) {
-      const el = outRef.current;
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-      if (nearBottom) {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
-        });
-      }
-    }
+
 
     raf.current = null;
   };
@@ -360,7 +351,7 @@ export default function Terminal() {
         <div className="titlebar">
           <div className="nav-left">
             <GitIcon />
-            github
+             github
           </div>
           <div className="nav-right">
             <LinkedInIcon />
@@ -391,7 +382,7 @@ export default function Terminal() {
             </div>
           </div>
 
-          <pre ref={outRef} className="stream" aria-live="polite">
+          <pre ref={messagesContainerRef} className="stream" aria-live="polite">
             {lines.map((segments, lineIndex) => (
               <span key={lineIndex}>
                 {segments.map((segment, segmentIndex) => (
@@ -400,6 +391,7 @@ export default function Terminal() {
                 {lineIndex < lines.length - 1 ? <br /> : null}
               </span>
             ))}
+            <div ref={messagesEndRef} />
           </pre>
         </div>
 
@@ -527,7 +519,7 @@ export default function Terminal() {
           border-bottom: 1px solid var(--bg1);
           user-select: none;
         }
-        .nav-left { display: flex; align-items: center; }
+        .nav-left { display: flex; align-items: center; gap: 8px; }
         .nav-right { display: flex; align-items: center; gap: 8px; }
         .title {
           font-weight: 700;
