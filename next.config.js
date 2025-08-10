@@ -10,6 +10,7 @@ const nextConfig = {
         'react-dom/test-utils': 'preact/test-utils',
         'react-dom/client': 'preact/compat',
         'react-dom': 'preact/compat',
+        'styled-jsx/style': 'styled-jsx/style/dist/index.js',
       };
     }
     return config;
