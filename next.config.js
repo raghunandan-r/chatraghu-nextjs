@@ -5,7 +5,10 @@ const nextConfig = {
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
         react: 'preact/compat',
+        'react/jsx-runtime': 'preact/jsx-runtime',
+        'react/jsx-dev-runtime': 'preact/jsx-runtime',
         'react-dom/test-utils': 'preact/test-utils',
+        'react-dom/client': 'preact/compat',
         'react-dom': 'preact/compat',
       };
     }
