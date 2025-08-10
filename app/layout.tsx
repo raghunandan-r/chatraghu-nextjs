@@ -6,23 +6,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "Chat with Raghu",
-  description:
-    "Chat with Assistant AI",
-  openGraph: {
-    images: [
-      {
-        url: "/og?title=AI SDK Python Streaming Preview",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: [
-      {
-        url: "/og?title=AI SDK Python Streaming Preview",
-      },
-    ],
-  },
+  description: "Chat with Assistant AI",
 };
 
 export default function RootLayout({
