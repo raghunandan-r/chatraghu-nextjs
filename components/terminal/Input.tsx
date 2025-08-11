@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 type CaretRefs = {
   inputRef: React.RefObject<HTMLInputElement>;
@@ -41,6 +41,11 @@ export default function InputBar({
   updateCaretAndSelection,
 }: Props) {
   const { inputRef, measureStartRef, measureEndRef, caretRef, selectionRef } = refsFromCaretHook;
+
+  // Ensure caret is positioned correctly on mount before any user interaction
+  useEffect(() => {
+    updateCaretAndSelection();
+  }, [updateCaretAndSelection]);
 
   return (
     <form

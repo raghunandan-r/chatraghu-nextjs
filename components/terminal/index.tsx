@@ -14,7 +14,7 @@ import { useChatStream } from '@/hooks/use-chat-stream';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useInputHistory } from '@/hooks/use-input-history';
 
-export default function Terminal() {
+export default function Terminal({ yearsSince2013 }: { yearsSince2013: string }) {
   const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLPreElement>();
   const [input, setInput] = useState('');
 
@@ -48,7 +48,7 @@ export default function Terminal() {
       <div className="window">
         <Titlebar />
         <div className="term">
-          <Intro />
+          <Intro yearsSince2013={yearsSince2013}/>
           <Stream lines={lines} messagesContainerRef={messagesContainerRef} messagesEndRef={messagesEndRef} />
         </div>
         <InputBar
@@ -134,6 +134,8 @@ export default function Terminal() {
         @media (max-width: 768px) { .intro-block { padding: 4px 3px 8px 3px; } }
 
         .help { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 24px; align-items: baseline; }
+        /* Ensure the intro column occupies a full row so hint items appear beneath it */
+        .help .intro { flex: 0 0 100%; width: 100%; }
         .intro { max-width: 820px; text-align: left; color: var(--fg); }
         .intro-line { margin: 2px 0; color: var(--fg); }
         .intro-section { margin: 10px 0 6px; color: var(--fg); }
@@ -164,8 +166,8 @@ export default function Terminal() {
         .measure-end { visibility: hidden; }
         .sel { position: absolute; top: 7px; height: calc(100% - 14px); background: rgba(250, 189, 47, 0.25); border: 1px solid rgba(250, 189, 47, 0.35); border-radius: 2px; opacity: 0; pointer-events: none; }
         #banner-small { display: none; }
-        .fat-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 8px; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
-        .ghost-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 8px; height: 1.2em; border-radius: 1px; }
+        .fat-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 8px; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
+        .ghost-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 8px; height: 1.2em; border-radius: 1px; }
         :global(.raghu-prefix) { color: #fabd2f; font-weight: 700; }
         @keyframes blink { 0% { opacity: 1; } 49% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
 

@@ -1,14 +1,6 @@
-import { useMemo } from 'react';
 import { BANNER_large, BANNER_small } from './constants';
 
-export default function Intro() {
-  const yearsSince2013 = useMemo(() => {
-    const start = new Date('2013-08-13T00:00:00Z');
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const years = diffMs / (1000 * 60 * 60 * 24 * 365.2425) - 2.5;
-    return years.toFixed(1);
-  }, []);
+export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
 
   return (
     <div className="intro-block" aria-hidden="false">
@@ -27,7 +19,7 @@ export default function Intro() {
           <p className="intro-section"><strong>Previously I...</strong></p>
           <ul className="intro-list">
             <li>graduated from <a href="https://www.rit.edu/" target="_blank" className="intro-link" rel="noreferrer">Rochester Institute of Technology</a> with a MSc in Data Science</li>
-            <li>built data tools for RevOps at <a href="https://www.micron.com/" target="_blank" className="intro-link" rel="noreferrer">Micron</a></li>
+            <li>interned at <a href="https://www.micron.com/" target="_blank" className="intro-link" rel="noreferrer">Micron</a>, where I built data tools</li>
             <li>worked on b2b SaaS at <a href="https://www.freshworks.com/" target="_blank" className="intro-link" rel="noreferrer">Freshworks</a></li>
             <li>worked on hyperlocal delivery at <a href="https://www.lynk.co.in/" target="_blank" className="intro-link" rel="noreferrer">Lynk</a></li>
             <li>worked on FinTech at <a href="https://www.bankbazaar.com/" target="_blank" className="intro-link" rel="noreferrer">Bankbazaar</a></li>
