@@ -1,7 +1,7 @@
 // components/terminal.tsx
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { GitIcon, LinkedInIcon } from '@/components/icons';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { GitIcon, LinkedInIcon, GmailIcon } from '@/components/icons';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 
 const BUFFER_CAP = 512 * 1024; // keep last 512KB
@@ -38,12 +38,15 @@ type PendingNode =
   | { type: 'prefix' }
   | { type: 'newline' };
 
+type SerializableSegment = string | { type: 'prefix' };
+type SerializableLine = SerializableSegment[];
+
 export default function Terminal() {
   const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLPreElement>();
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [spinnerChar, setSpinnerChar] = useState<string>('');
-  const [lines, setLines] = useState<Array<Array<React.ReactNode>>>([[]]);
+  const [lines, setLines] = useState<SerializableLine[]>([]);
   const history = useRef<string[]>([]);
   const histIdx = useRef<number>(-1);
   const pendingNodesRef = useRef<PendingNode[]>([]);
@@ -61,6 +64,14 @@ export default function Terminal() {
   const [statusText, setStatusText] = useState('');
   const [startedStreaming, setStartedStreaming] = useState(false);
   const startedStreamingRef = useRef(false);
+  const threadIdRef = useRef<string | null>(null);
+  const yearsSince2013 = useMemo(() => {
+    const start = new Date('2013-08-13T00:00:00Z');
+    const now = new Date();
+    const diffMs = now.getTime() - start.getTime();
+    const years = (diffMs / (1000 * 60 * 60 * 24 * 365.2425))-2.5;
+    return years.toFixed(1);
+  }, []);
 
   // Timers for delayed spinner + loading text
   const spinnerStartTimeoutRef = useRef<number | null>(null);
@@ -101,35 +112,24 @@ export default function Terminal() {
     pendingNodesRef.current = [];
 
     setLines(currentLines => {
-      let newLines = [...currentLines];
+      let newLines = JSON.parse(JSON.stringify(currentLines));
       let currentLineIndex = newLines.length - 1;
 
       for (const node of pending) {
         if (node.type === 'prefix') {
-          // If current line is not empty, start a new line
           if (newLines[currentLineIndex].length > 0) {
             newLines.push([]);
             currentLineIndex++;
           }
-          // Add the styled prefix
-          const prefixElement = (
-            <span key={`prefix-${Date.now()}-${Math.random()}`} className="raghu-prefix">
-              raghu &gt;
-            </span>
-          );
-
-          newLines[currentLineIndex].push(prefixElement);
+          newLines[currentLineIndex].push({ type: 'prefix' });
         } else if (node.type === 'text') {
-          // Split text on newlines
           const parts = node.value.split('\n');
           
-          // First part goes to current line
           if (parts[0]) {
             newLines[currentLineIndex].push(parts[0]);
             totalCharsRef.current += parts[0].length;
           }
           
-          // Each subsequent part starts a new line
           for (let i = 1; i < parts.length; i++) {
             newLines.push([]);
             currentLineIndex++;
@@ -144,11 +144,9 @@ export default function Terminal() {
         }
       }
 
-      // Enforce buffer cap
       while (totalCharsRef.current > BUFFER_CAP && newLines.length > 1) {
         const removedLine = newLines.shift()!;
-        // Calculate characters removed
-        const removedChars = removedLine.reduce((count: number, segment) => {
+        const removedChars = removedLine.reduce((count: number, segment: SerializableSegment) => {
           return count + (typeof segment === 'string' ? segment.length : 0);
         }, 0);
         totalCharsRef.current -= removedChars;
@@ -156,8 +154,6 @@ export default function Terminal() {
 
       return newLines;
     });
-
-
 
     raf.current = null;
   };
@@ -167,7 +163,7 @@ export default function Terminal() {
     if (!inputEl) return;
     const selStart = inputEl.selectionStart ?? inputEl.value.length;
     const selEnd = inputEl.selectionEnd ?? selStart;
-    const baseLeftPx = 25; // prompt (11) + padding-left (22) - box-padding (4)
+    const baseLeftPx = 25; // magic number issue. needs fixing
     const scrollLeft = inputEl.scrollLeft || 0;
 
     if (measureStartRef.current) {
@@ -251,7 +247,7 @@ export default function Terminal() {
         textIdx = (textIdx + 1) % loadingTexts.current.length;
         setStatusText(loadingTexts.current[textIdx]);
       }, 1500);
-    }, 500);
+    }, 1000);
 
     return () => clearAll();
   }, [busy]);
@@ -271,7 +267,45 @@ export default function Terminal() {
     }
   }, [startedStreaming]);
 
+  // Get or create a thread_id on component mount
+  useEffect(() => {
+    // Load chat history from localStorage
+    try {
+      const storedLines = localStorage.getItem('terminal_history');
+      if (storedLines) {
+        const parsedLines: SerializableLine[] = JSON.parse(storedLines);
+        setLines(parsedLines);
+        let charCount = 0;
+        for (const line of parsedLines) {
+          for (const segment of line) {
+            if (typeof segment === 'string') {
+              charCount += segment.length;
+            }
+          }
+        }
+        totalCharsRef.current = charCount;
+      }
+    } catch (e) {
+      console.error("Failed to load terminal history:", e);
+      localStorage.removeItem('terminal_history');
+    }
 
+    const storedThreadId = localStorage.getItem('thread_id');
+    if (storedThreadId) {
+      threadIdRef.current = storedThreadId;
+    } else {
+      const newThreadId = crypto.randomUUID();
+      threadIdRef.current = newThreadId;
+      localStorage.setItem('thread_id', newThreadId);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    if (lines.length > 0 && (lines.length > 1 || lines[0].length > 0)) {
+      localStorage.setItem('terminal_history', JSON.stringify(lines));
+    }
+  }, [lines]);
 
 
   const clear = () => {
@@ -293,7 +327,13 @@ export default function Terminal() {
       const res = await fetch('/api/chat?protocol=data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: msg }] }),
+        body: JSON.stringify({ 
+          messages: [{ 
+            role: 'user', 
+            content: msg, 
+            thread_id: threadIdRef.current 
+          }] 
+        }),
         signal: controller.signal,
       });
       const reader = res.body!.getReader();
@@ -349,31 +389,56 @@ export default function Terminal() {
     <div className="shell">
       <div className="window">
         <div className="titlebar">
-          <div className="nav-left">
-            <GitIcon />
-             github
-          </div>
-          <div className="nav-right">
-            <LinkedInIcon />
-            linkedin
-          </div>
+          <nav className="nav">
+            <a href="https://github.com/raghunandan-r" target="_blank" className="social-link">
+              <GitIcon />
+              github
+            </a>
+            <a href="mailto:raghunandan092@gmail.com" target="_blank" className="social-link">
+              <GmailIcon />
+              mail
+            </a>
+            <a href="https://www.linkedin.com/in/raghudan/" target="_blank"   className="social-link">
+              <LinkedInIcon />
+              linkedin
+            </a>
+          </nav>
         </div>
         <div className="term">
           <div className="intro-block" aria-hidden="false">
-            <pre id="banner-large" style={{ display: 'block' }}>{BANNER_large}</pre>
-            <pre id="banner-small" style={{ display: 'none' }}>{BANNER_small}</pre>
+            <pre id="banner-large">{BANNER_large}</pre>
+            <pre id="banner-small">{BANNER_small}</pre>
             <div className="help">  
+              <div className="col intro">
+                <p className="intro-line">Hi, I&apos;m based in nyc.</p>
+                <p className="intro-line">I&apos;ve been building things for {yearsSince2013} years.</p>
+
+                <p className="intro-section"><strong>I&apos;m currently...</strong></p>
+                <ul className="intro-list">
+                  <li>volunteering at <a href="https://chieac.org/chicagodatascience" target="_blank" className="intro-link">CHIEAC</a> as a data scientist, helping build a GenAI tool for the community</li>
+                </ul>
+
+                <p className="intro-section"><strong>Previously I...</strong></p>
+                <ul className="intro-list">
+                  <li>graduated from <a href="https://www.rit.edu/" target="_blank" className="intro-link">Rochester Institute of Technology</a> with a MSc in Data Science</li>
+                  <li>built data tools for RevOps at <a href="https://www.micron.com/" target="_blank" className="intro-link">Micron</a></li>
+                  <li>worked on b2b SaaS at <a href="https://www.freshworks.com/" target="_blank" className="intro-link">Freshworks</a></li>
+                  <li>worked on hyperlocal delivery at <a href="https://www.lynk.co.in/" target="_blank" className="intro-link">Lynk</a></li>
+                  <li>worked on FinTech at <a href="https://www.bankbazaar.com/" target="_blank" className="intro-link">Bankbazaar</a>, building integrations for Tech &amp; Ops</li>
+                  <li>started out as a Developer at <a href="https://www.dxc.com/" target="_blank" className="intro-link">DXC</a></li>
+                </ul>
+
+                <p className="intro-section"><strong>Projects I&apos;m working on...</strong></p>
+                <ul className="intro-list">
+                  <li><a href="https://raghu.fyi" target="_blank" className="intro-link">raghu.fyi</a> - website to talk about my work, built with Next.js</li>
+                  <li><a href="https://github.com/raghunandan-r/chatRaghu-backend" target="_blank" className="intro-link">chatRaghu</a> - backend engine with RAG, built with FastAPI, OpenAI &amp; Pinecone</li>
+                  <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link">chatRaghu_elt</a> - real-time evals built with GCP, BigQuery, dbt &amp; Hex</li>
+                </ul>
+                <p className="intro-section"><strong>Questions? Ask away!</strong></p>
+              </div>
               <div className="col">
                 <span className="cmd">Type to start</span>
                 <span className="desc">Enter to send</span>
-              </div>
-              <div className="col">
-                <span className="cmd">Ctrl+C</span>
-                <span className="desc">abort streaming</span>
-              </div>
-              <div className="col">
-                <span className="cmd">Ctrl+L</span>
-                <span className="desc">clear screen</span>
               </div>
               <div className="col">
                 <span className="cmd">↑/↓</span>
@@ -386,7 +451,9 @@ export default function Terminal() {
             {lines.map((segments, lineIndex) => (
               <span key={lineIndex}>
                 {segments.map((segment, segmentIndex) => (
-                  <span key={segmentIndex}>{segment}</span>
+                  typeof segment === 'string'
+                    ? <span key={segmentIndex}>{segment}</span>
+                    : <span key={segmentIndex} className="raghu-prefix">raghu &gt; </span>
                 ))}
                 {lineIndex < lines.length - 1 ? <br /> : null}
               </span>
@@ -415,9 +482,21 @@ export default function Terminal() {
               onChange={(e) => {
                 setInput(e.target.value);
               }}
+              enterKeyHint="send"
               onKeyDown={(e) => {
                 // update caret on navigation keys before React updates value
                 requestAnimationFrame(updateCaretAndSelection);
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (!busy && input.trim()) {
+                    history.current.unshift(input);
+                    histIdx.current = -1;
+                    const toSend = input;
+                    setInput('');
+                    send(toSend);
+                  }
+                  return;
+                }
                 if (e.key === 'ArrowUp') {
                   e.preventDefault();
                   if (history.current.length) {
@@ -437,22 +516,9 @@ export default function Terminal() {
                   }
                   return;
                 }
-                if (e.ctrlKey && e.key.toLowerCase() === 'l') {
-                  e.preventDefault();
-                  clear();
-                  return;
-                }
                 if (e.ctrlKey && e.key.toLowerCase() === 'u') {
                   e.preventDefault();
                   setInput('');
-                  return;
-                }
-                if (e.ctrlKey && e.key.toLowerCase() === 'c') {
-                  e.preventDefault();
-                  if (busy) {
-                    controllerRef.current?.abort();
-                    setBusy(false);
-                  }
                   return;
                 }
               }}
@@ -494,7 +560,7 @@ export default function Terminal() {
 
           min-height: 100dvh;
           padding: 24px;
-          background: radial-gradient(1200px 600px at 0% -10%, var(--bg) 0%, #0f1112 60%);
+          background: radial-gradient(1200px 600px at 0% -10%, var(--bg) 0%, var(--bg0) 60%);
           color: var(--fg);
         }
         .window {
@@ -513,14 +579,31 @@ export default function Terminal() {
         .titlebar {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           padding: 0 12px;
           background: linear-gradient(180deg, var(--bg0), var(--bg));
           border-bottom: 1px solid var(--bg1);
           user-select: none;
         }
-        .nav-left { display: flex; align-items: center; gap: 8px; }
-        .nav-right { display: flex; align-items: center; gap: 8px; }
+        .nav { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+        .social-link {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          color: var(--muted);
+          text-decoration: none;
+          border-radius: 6px;
+          border: 1px solid transparent;
+          transition: all 0.2s ease;
+        }
+        .social-link:hover {
+          color: var(--fg);
+          background: var(--bg1);
+          border-color: var(--yellow);
+          transform: translateY(-1px);
+        }
         .title {
           font-weight: 700;
           color: var(--yellow);
@@ -532,7 +615,7 @@ export default function Terminal() {
           align-items: center;
           gap: 4px;
           padding: 4px 8px;
-          font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;          
+          font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;          
           color: var(--muted);
           text-decoration: none;
           border-radius: 4px;
@@ -547,7 +630,7 @@ export default function Terminal() {
           color: var(--bg);
         }
         .nav-btn.deploy:hover {
-          background: rgb(250, 208, 46);
+          background: #fabd2f;
           color: var(--bg);
         }
         .braille { color: var(--aqua); font-weight: 800; letter-spacing: 1px; display: inline-block; min-width: 1ch; }
@@ -563,7 +646,7 @@ export default function Terminal() {
           white-space: pre;
           color: var(--blue);
           text-shadow: 0 0 18px rgba(131,165,152,.15);
-          font: 14px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
           color: #cdd6f4;
           text-align: center;
           line-height: 1;
@@ -574,15 +657,24 @@ export default function Terminal() {
         }      
         .help {
           margin-top: 16px;
-          display: grid;
-          grid-template-columns: repeat(4, max-content);
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
           gap: 14px 24px;
           align-items: baseline;
         }
+        .intro { max-width: 820px; text-align: left; color: var(--fg); }
+        .intro-line { margin: 2px 0; color: var(--fg); }
+        .intro-section { margin: 10px 0 6px; color: var(--fg); }
+        .intro-section strong { font-weight: 700; }
+        .intro-list { list-style: none; padding: 0; margin: 4px 0 10px; }
+        .intro-list li { position: relative; padding-left: 14px; margin: 3px 0; }
+        .intro-list li::before { content: '›'; position: absolute; left: 0; top: 0; color: var(--yellow); }
+        .intro-link { color: var(--fg); text-decoration: none; border-bottom: 3px dashed var(--bg1); text-underline-offset: 5px; }
+        .intro-link:hover { color: var(--yellow); border-bottom-color: var(--yellow); }
         @media (max-width: 768px) {
           .help {
             margin-top: 8px;
-            grid-template-columns: repeat(2, max-content);
             gap: 8px 16px;
             font-size: 12px;
           }
@@ -595,24 +687,24 @@ export default function Terminal() {
           -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overscroll-behavior: contain;
           /* Custom scrollbar */
           scrollbar-width: thin;
-          scrollbar-color: rgb(243, 196, 27) #1a1d1e;
+          scrollbar-color: var(--yellow) var(--bg1);
         }
         .term::-webkit-scrollbar { width: 8px; }
-        .term::-webkit-scrollbar-track { background: #1a1d1e; border-radius: 4px; }
-        .term::-webkit-scrollbar-thumb { background: rgb(243, 196, 27); border-radius: 4px; }
-        .term::-webkit-scrollbar-thumb:hover { background: rgb(250, 208, 46); }
-        .stream { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .2px; }
+        .term::-webkit-scrollbar-track { background: var(--bg1); border-radius: 4px; }
+        .term::-webkit-scrollbar-thumb { background: #fabd2f; border-radius: 4px; }
+        .term::-webkit-scrollbar-thumb:hover { background: #fabd2f; }
+        .stream { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .2px; }
 
         .row { padding: 10px; background: var(--bg0); border-top: 0px solid var(--bg1); }
         .box {
           position: relative;
           display: flex;
           align-items: center;
-          background: #232728;
+          background: var(--bg0);
           border: 1px solid var(--bg1);
           border-radius: 3px;
           padding: 4px 4px;
-          border-color: rgb(243, 196, 27);
+          border-color: #fabd2f;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
         }
         .prompt {
@@ -620,7 +712,7 @@ export default function Terminal() {
           left: 12px;
           top: 50%;
           transform: translateY(-50%);
-          color: rgb(243, 196, 27);
+          color: #fabd2f;
           font-weight: 700;
           pointer-events: none;
         }
@@ -635,19 +727,19 @@ export default function Terminal() {
           caret-color: transparent; /* hide native caret */
         }
         .inp::placeholder { color: var(--muted); }
-        .inp:focus { background: #1f2324; }
+        .inp:focus { background: var(--bg1); }
         .measure { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); white-space: pre; font: inherit; color: transparent; pointer-events: none; }
         .measure-end { visibility: hidden; }
         .sel { position: absolute; top: 7px; height: calc(100% - 14px); background: rgba(250, 189, 47, 0.25); border: 1px solid rgba(250, 189, 47, 0.35); border-radius: 2px; opacity: 0; pointer-events: none; }
         .hint { margin-top: 6px; color: var(--muted); font-size: 12px; }
-        .key { display: inline-block; padding: 1px 6px; border: 1px solid var(--bg1); border-radius: 6px; margin-right: 6px; color: var(--fg); background: #222; }
+        .key { display: inline-block; padding: 1px 6px; border: 1px solid var(--bg1); border-radius: 6px; margin-right: 6px; color: var(--fg); background: var(--bg0); }
         #banner-small {
             display: none; /* Hide the small banner by default */
         }
         .fat-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 8px; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
         .ghost-caret { position: absolute; top: 50%; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 8px; height: 1.2em; border-radius: 1px; }
 
-        :global(.raghu-prefix) { color: rgb(243, 196, 27); font-weight: 700; }
+        :global(.raghu-prefix) { color: #fabd2f; font-weight: 700; }
 
         /* Define the blinking animation */
         @keyframes blink {
@@ -657,16 +749,26 @@ export default function Terminal() {
           100% { opacity: 0; }
         }
 
+        #banner-large, #banner-small {
+            max-width: 100%;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        #banner-large::-webkit-scrollbar, #banner-small::-webkit-scrollbar {
+            display: none; /* Safari and Chrome */
+        }
+
         #banner-large {
             display: block; /* Show the large banner by default */
             margin: 0;
             white-space: pre;
             text-shadow: 0 0 18px rgba(134, 109, 10, 0.34);
-            font: 14px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             color:rgb(244, 243, 205);
             text-align: center;
             line-height: 1;
-            background-image: linear-gradient(45deg,rgb(245, 238, 194),rgb(243, 196, 27));
+            background-image: linear-gradient(45deg,var(--purple), var(--yellow));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -681,11 +783,11 @@ export default function Terminal() {
                 margin: 0;
                 white-space: pre;
                 text-shadow: 0 0 18px rgba(134, 109, 10, 0.34);
-                font: 14px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
                 color:rgb(244, 243, 205);
                 text-align: center;
                 line-height: 1;
-                background-image: linear-gradient(45deg,rgb(245, 238, 194),rgb(243, 196, 27));
+                background-image: linear-gradient(45deg,var(--purple), var(--yellow));
                 -webkit-background-clip: text;
                 background-clip: text;
                 color: transparent;

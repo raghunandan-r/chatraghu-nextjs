@@ -36,8 +36,6 @@ else:
         },
     )
 
-thread_id_store = {}  # In-memory store for thread IDs
-
 class ClientMessage(BaseModel):
     role: str
     content: str
@@ -46,9 +44,9 @@ class ClientMessage(BaseModel):
 app = FastAPI()
 
 # Add this right after FastAPI initialization
-print("Starting FastAPI proxy server...")
+logger.info("Starting FastAPI proxy server...")
 if __name__ == "__main__":
-    print("FastAPI proxy server running on http://127.0.0.1:8000")
+    logger.info("FastAPI proxy server running on http://127.0.0.1:8000")
 
 class Request(BaseModel):
     messages: List[ClientMessage]
@@ -132,23 +130,23 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     try:
         messages = request.messages
-        session_key = hash(messages[0].content)
-        
-        if session_key not in thread_id_store:
-            thread_id_store[session_key] = str(uuid.uuid4())
-        
-        thread_id = thread_id_store[session_key]
-        
+        last_message = messages[-1] if messages else None
+
+        if not last_message:
+            # Handle case where there are no messages
+            return StreamingResponse(content="No messages provided", status_code=400)
+
+        thread_id = last_message.thread_id or str(uuid.uuid4())
+
         logger.info("Chat request received", extra={
             "thread_id": thread_id,
-            "session_key": session_key,
-            "message_length": len(messages[0].content)
+            "chat_message": last_message.content
         })
         
         chat_request = {
             "messages": [{
-                "role": messages[-1].role,
-                "content": messages[-1].content,
+                "role": last_message.role,
+                "content": last_message.content,
                 "thread_id": thread_id
             }]
         }
