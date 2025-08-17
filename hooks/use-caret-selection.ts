@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 export function useCaretSelection() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -7,7 +7,7 @@ export function useCaretSelection() {
   const caretRef = useRef<HTMLSpanElement>(null);
   const selectionRef = useRef<HTMLSpanElement>(null);
 
-  const updateCaretAndSelection = () => {
+  const updateCaretAndSelection = useCallback(() => {
     const inputEl = inputRef.current;
     if (!inputEl) return;
     const selStart = inputEl.selectionStart ?? inputEl.value.length;
@@ -35,7 +35,7 @@ export function useCaretSelection() {
       selectionRef.current.style.width = `${width}px`;
       selectionRef.current.style.opacity = width > 0 ? '1' : '0';
     }
-  };
+  }, []);
 
   return {
     inputRef,

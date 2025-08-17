@@ -24,11 +24,12 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
     try {
       const res = await fetch('/api/chat?protocol=data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: msg, thread_id: threadIdRef.current }],
         }),
         signal: controller.signal,
+        cache: 'no-store',
       });
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -50,12 +51,13 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
           const line = buf.slice(0, i).trim();
           buf = buf.slice(i + 1);
           if (!line) continue;
-          if (line.startsWith('0:')) {
+          if (line.startsWith('data:')) {
             try {
-              const chunk = JSON.parse(line.slice(2));
-              if (chunk) appendText(String(chunk));
+              const chunk = String(line.slice(6));
+              if (chunk) appendText(chunk);
             } catch {
               // ignore bad chunk
+              // console.log('Bad chunk:', "--", line, "--");
             }
           }
         }

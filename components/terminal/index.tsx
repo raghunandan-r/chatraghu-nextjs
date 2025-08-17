@@ -41,7 +41,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
   // Ensure focus returns to input after streaming completes
   useEffect(() => {
     if (!busy) requestAnimationFrame(() => caret.inputRef.current?.focus());
-  }, [busy]);
+  }, [busy, caret.inputRef]);
 
   return (
     <div className="shell">

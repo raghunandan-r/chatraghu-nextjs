@@ -1,6 +1,4 @@
-import asyncio
 import os
-import json
 from typing import List, Optional
 import httpx
 from pydantic import BaseModel
@@ -12,7 +10,6 @@ import uuid
 from httpx import AsyncClient, AsyncHTTPTransport
 
 import sentry_sdk
-from sentry_sdk import capture_exception, capture_message
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
@@ -82,34 +79,21 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream",
-                    "X-API-Key": api_key            
+                    "X-API-Key": api_key,
+                    "Accept-Encoding": "identity",
                 }
             ) as response:
                 try:
-                    async for line in response.aiter_lines():
-                        if not line or line.isspace():
+                    # Pass through upstream SSE bytes without re-framing or double-encoding
+                    async for chunk in response.aiter_raw():
+                        if not chunk:
                             continue
-                            
-                        try:
-                            chunk = json.loads(line)
-                            for choice in chunk.get('choices', []):
-                                if choice.get('delta', {}).get('content') == '[DONE]':
-                                    continue
-                                yield f'0:{json.dumps(choice["delta"]["content"])}\n'
-                                
-                        except json.JSONDecodeError:
-                            logger.warning("Malformed JSON received", extra={
-                                "line_preview": line[:100],
-                                "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
-                            })
-                            continue
-                            
+                        yield chunk
                 except httpx.ReadTimeout:
                     logger.warning("Stream read timeout", extra={
                         "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
                     })
                     return
-                    
                 except httpx.StreamError:
                     logger.warning("Stream ended unexpectedly", extra={
                         "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
@@ -153,8 +137,12 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
 
         response = StreamingResponse(
             stream_text(chat_request, protocol),
+            media_type='text/event-stream',
             headers={
-                'x-vercel-ai-data-stream': 'v1'
+                'x-vercel-ai-data-stream': 'v1',
+                'cache-control': 'no-cache, no-transform',
+                'connection': 'keep-alive',
+                'x-accel-buffering': 'no',
             }
         )
         return response
