@@ -14,6 +14,7 @@
     "@types/node": "20.2.4",
     "@types/react": "18.2.7",
     "@types/react-dom": "18.2.4",
+    "@vercel/analytics": "^1.5.0",
     "@vercel/kv": "^2.0.0",
     "ai": "^4.1.10",
     "concurrently": "^8.2.2",
