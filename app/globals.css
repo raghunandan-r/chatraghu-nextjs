@@ -73,6 +73,7 @@
 .intro-line { margin: 2px 0; color: var(--fg); }
 .intro-section { margin: 10px 0 6px; color: var(--fg); }
 .intro-section strong { font-weight: 700; }
+.intro-section.spaced { margin-top: 1.5rem; }
 .intro-list { list-style: none; padding: 0; margin: 4px 0 10px; }
 .intro-list li { position: relative; padding-left: 14px; margin: 3px 0; }
 .intro-list li::before { content: '›'; position: absolute; left: 0; top: 0; color: var(--yellow); }

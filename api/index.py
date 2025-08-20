@@ -99,6 +99,11 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
                         "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
                     })
                     return
+                except httpx.RemoteProtocolError:
+                    logger.warning("Remote connection closed unexpectedly", extra={
+                        "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
+                    })
+                    return
                     
         except Exception as e:
             logger.exception("Error in stream_text", extra={

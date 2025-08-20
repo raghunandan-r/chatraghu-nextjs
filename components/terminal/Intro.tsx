@@ -8,8 +8,8 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
       <pre id="banner-small">{BANNER_small}</pre>
       <div className="help">
         <div className="col intro">
-          <p className="intro-line">I&apos;m based in nyc.</p>
-          <p className="intro-line">I&apos;ve been building things for {yearsSince2013} years.</p>
+          <p className="intro-line">Pronounced like the pasta sauce, just with a different accent.</p>
+          <p className="intro-line">I&apos;m based in nyc and I&apos;ve been building things for {yearsSince2013} years.</p>
 
           <p className="intro-section"><strong>I&apos;m currently...</strong></p>
           <ul className="intro-list">
@@ -31,8 +31,8 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
             <li><a href="https://raghu.fyi" target="_blank" className="intro-link" rel="noreferrer">raghu.fyi</a> - website to talk about my work, built with Next.js</li>
             <li><a href="https://github.com/raghunandan-r/chatRaghu-backend" target="_blank" className="intro-link" rel="noreferrer">chatRaghu</a> - backend engine with RAG, built with FastAPI, OpenAI &amp; Pinecone</li>
             <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - real-time evals built with GCP, BigQuery, dbt &amp; Hex</li>
-          </ul>
-          <p className="intro-section"><strong>Questions? Ask away!</strong></p>
+          </ul>          
+          <p className="intro-section spaced"><strong>Questions? Ask away!</strong></p>
         </div>
         <div className="col">
           <span className="cmd">Type to start</span>
