@@ -6,82 +6,80 @@ export function useSpinnerStatus(busy: boolean, spinnerFrames: string[], loading
   const [startedStreaming, setStartedStreaming] = useState(false);
   const startedStreamingRef = useRef(false);
   const spinnerIndexRef = useRef(0);
-
+  
   const spinnerStartTimeoutRef = useRef<number | null>(null);
   const spinnerIntervalRef = useRef<number | null>(null);
   const textStartTimeoutRef = useRef<number | null>(null);
   const textIntervalRef = useRef<number | null>(null);
 
-  useEffect(() => { startedStreamingRef.current = startedStreaming; }, [startedStreaming]);
+  // Single source of truth for cleanup
+  const clearTimers = () => {
+    if (spinnerStartTimeoutRef.current) {
+      clearTimeout(spinnerStartTimeoutRef.current);
+      spinnerStartTimeoutRef.current = null;
+    }
+    if (spinnerIntervalRef.current) {
+      clearInterval(spinnerIntervalRef.current);
+      spinnerIntervalRef.current = null;
+    }
+    if (textStartTimeoutRef.current) {
+      clearTimeout(textStartTimeoutRef.current);
+      textStartTimeoutRef.current = null;
+    }
+    if (textIntervalRef.current) {
+      clearInterval(textIntervalRef.current);
+      textIntervalRef.current = null;
+    }
+  };
 
+  // Update streaming ref
   useEffect(() => {
-    const clearAll = () => {
-      if (spinnerStartTimeoutRef.current) {
-        clearTimeout(spinnerStartTimeoutRef.current);
-        spinnerStartTimeoutRef.current = null;
-      }
-      if (spinnerIntervalRef.current) {
-        clearInterval(spinnerIntervalRef.current);
-        spinnerIntervalRef.current = null;
-      }
-      if (textStartTimeoutRef.current) {
-        clearTimeout(textStartTimeoutRef.current);
-        textStartTimeoutRef.current = null;
-      }
-      if (textIntervalRef.current) {
-        clearInterval(textIntervalRef.current);
-        textIntervalRef.current = null;
-      }
-    };
+    startedStreamingRef.current = startedStreaming;
+  }, [startedStreaming]);
 
+  // Main spinner effect
+  useEffect(() => {
+    // Clear everything when not busy
     if (!busy) {
-      clearAll();
+      clearTimers();
       setSpinnerChar('');
       setStatusText('');
       spinnerIndexRef.current = 0;
       return;
     }
 
-    spinnerStartTimeoutRef.current = window.setTimeout(() => {
+    // Start spinner immediately without delay
+    setSpinnerChar(spinnerFrames[0]);
+    spinnerIntervalRef.current = window.setInterval(() => {
+      spinnerIndexRef.current = (spinnerIndexRef.current + 1) % spinnerFrames.length;
       setSpinnerChar(spinnerFrames[spinnerIndexRef.current]);
-      spinnerIntervalRef.current = window.setInterval(() => {
-        spinnerIndexRef.current = (spinnerIndexRef.current + 1) % spinnerFrames.length;
-        setSpinnerChar(spinnerFrames[spinnerIndexRef.current]);
-      }, 80);
-    }, 100);
+    }, 80);
 
-    textStartTimeoutRef.current = window.setTimeout(() => {
-      if (startedStreamingRef.current) return;
+    // Handle loading text
+    if (!startedStreamingRef.current) {
       setStatusText(loadingTexts[0]);
       let textIdx = 0;
       textIntervalRef.current = window.setInterval(() => {
         if (startedStreamingRef.current) {
           setStatusText('');
-          if (textIntervalRef.current) {
-            clearInterval(textIntervalRef.current);
-            textIntervalRef.current = null;
-          }
+          clearInterval(textIntervalRef.current!);
+          textIntervalRef.current = null;
           return;
         }
         textIdx = (textIdx + 1) % loadingTexts.length;
         setStatusText(loadingTexts[textIdx]);
-      }, 1500);
-    }, 1000);
+      }, 1000);
+    }
 
-    return () => clearAll();
+    // Cleanup function
+    return clearTimers;
   }, [busy, spinnerFrames, loadingTexts]);
 
+  // Handle streaming state changes
   useEffect(() => {
     if (startedStreaming) {
       setStatusText('');
-      if (textStartTimeoutRef.current) {
-        clearTimeout(textStartTimeoutRef.current);
-        textStartTimeoutRef.current = null;
-      }
-      if (textIntervalRef.current) {
-        clearInterval(textIntervalRef.current);
-        textIntervalRef.current = null;
-      }
+      clearTimers();
     }
   }, [startedStreaming]);
 

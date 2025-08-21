@@ -27,10 +27,10 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
           </ul>
 
           <p className="intro-section"><strong>Projects I&apos;m working on...</strong></p>
-          <ul className="intro-list">
-            <li><a href="https://raghu.fyi" target="_blank" className="intro-link" rel="noreferrer">raghu.fyi</a> - website to talk about my work, built with Next.js</li>
-            <li><a href="https://github.com/raghunandan-r/chatRaghu-backend" target="_blank" className="intro-link" rel="noreferrer">chatRaghu</a> - backend engine with RAG, built with FastAPI, OpenAI &amp; Pinecone</li>
-            <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - real-time evals built with GCP, BigQuery, dbt &amp; Hex</li>
+          <ul className="intro-list">            
+            <li><a href="https://github.com/raghunandan-r/chatRaghu-backend" target="_blank" className="intro-link" rel="noreferrer">raghu.fyi</a> - backend engine with RAG, built with FastAPI, OpenAI &amp; Pinecone</li>
+            <li><a href="https://github.com/raghunandan-r/data-engineer-handbook" target="_blank" className="intro-link" rel="noreferrer">dataengineer-handbook</a> - playing with with Spark, Flink &amp; Postgres</li>
+            <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li>
           </ul>          
           <p className="intro-section spaced"><strong>Questions? Ask away!</strong></p>
         </div>
