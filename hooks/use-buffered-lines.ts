@@ -20,7 +20,8 @@ export function useBufferedLines(
     pendingNodesRef.current = [];
 
     setLines(currentLines => {
-      const newLines: SerializableLine[] = JSON.parse(JSON.stringify(currentLines));
+      // Much faster alternative
+      const newLines = currentLines.map(line => [...line]);
       let currentLineIndex = newLines.length - 1;
 
       for (const node of pending) {
