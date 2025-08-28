@@ -114,7 +114,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
           align-items: center;
           gap: 6px;
           padding: 6px 10px;
-          font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
           color: var(--muted);
           text-decoration: none;
           border-radius: 6px;
@@ -166,8 +166,8 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
         .measure-end { visibility: hidden; }
         .sel { position: absolute; top: 7px; height: calc(100% - 14px); background: rgba(250, 189, 47, 0.25); border: 1px solid rgba(250, 189, 47, 0.35); border-radius: 2px; opacity: 0; pointer-events: none; }
         #banner-small { display: none; }
-        .fat-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 8px; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
-        .ghost-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 8px; height: 1.2em; border-radius: 1px; }
+        .fat-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: rgb(243, 196, 27); width: 1ch; height: 1.2em; animation: blink 1s steps(1) infinite; border-radius: 1px; }
+        .ghost-caret { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); display: inline-block; background-color: transparent; width: 1ch; height: 1.2em; border-radius: 1px; }
         :global(.raghu-prefix) { color: #fabd2f; font-weight: 700; }
         @keyframes blink { 0% { opacity: 1; } 49% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
 

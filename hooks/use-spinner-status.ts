@@ -79,7 +79,7 @@ export function useSpinnerStatus(busy: boolean, spinnerFrames: string[], loading
   useEffect(() => {
     if (startedStreaming) {
       setStatusText('');
-      clearTimers();
+      // Don't clear timers - let spinner continue until busy becomes false
     }
   }, [startedStreaming]);
 

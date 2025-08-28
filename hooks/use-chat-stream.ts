@@ -34,8 +34,6 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buf = '';
-      appendPrefix();
-      appendText(' ');
       let streamStarted = false;
       for (;;) {
         const { done, value } = await reader.read();
@@ -43,6 +41,8 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
         if (!streamStarted) {
           streamStarted = true;
           setStartedStreaming(true);
+          appendPrefix();
+          appendText(' ');
         }
         buf += decoder.decode(value, { stream: true });
         for (;;) {
