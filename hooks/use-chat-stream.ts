@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+const STREAM_TIMEOUT_MS = 15000; // 15 seconds
 
 type SendDeps = {
   appendText: (t: string) => void;
@@ -11,6 +12,7 @@ type SendDeps = {
 export function useChatStream({ appendText, appendPrefix, appendNewline, setStartedStreaming, threadIdRef }: SendDeps) {
   const [busy, setBusy] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   async function send(msg: string) {
     setBusy(true);
@@ -21,6 +23,16 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
 
     const controller = new AbortController();
     controllerRef.current = controller;
+
+    // Setup timeout
+    timeoutRef.current = window.setTimeout(() => {
+      if (controllerRef.current) {
+        controllerRef.current.abort('timeout');
+      }
+    }, STREAM_TIMEOUT_MS);
+
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+        
     try {
       const res = await fetch('/api/chat?protocol=data', {
         method: 'POST',
@@ -31,19 +43,35 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
         signal: controller.signal,
         cache: 'no-store',
       });
-      const reader = res.body!.getReader();
+
+      if (!res.ok || !res.body) {
+        const errorText = await res.text();
+        throw new Error(`Server error: ${res.status} ${res.statusText}${errorText ? ` - ${errorText}` : ''}`);
+      }
+      
+      reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
       let streamStarted = false;
+      
       for (;;) {
         const { done, value } = await reader.read();
-        if (done) break;
-        if (!streamStarted) {
+        
+        if (!streamStarted && value) {
           streamStarted = true;
           setStartedStreaming(true);
           appendPrefix();
           appendText(' ');
         }
+
+        if (done) {
+          // Handle any remaining partial chunk
+          const remaining = decoder.decode(undefined, { stream: false });
+          if (remaining) appendText(remaining);
+          setBusy(false);
+          break;
+        }
+
         buf += decoder.decode(value, { stream: true });
         for (;;) {
           const i = buf.indexOf('\n');
@@ -64,16 +92,32 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
       }
       appendNewline();
     } catch (err: any) {
+      setBusy(false);
+      const isTimeout = err?.name === 'AbortError' && err.message === 'timeout';
+      
       if (err?.name === 'AbortError') {
-        appendText('^C');
+        appendText(isTimeout ? '[request timed out, please try again later.]' : '^C');
         appendNewline();
       } else {
         appendNewline();
-        appendText('[error connecting to /api/chat]');
+        appendText(err?.message || '[error connecting to raghu\'s ai]');
         appendNewline();
       }
+
     } finally {
-      setBusy(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
+      if (reader) {
+        try {
+          await reader.cancel();
+        } catch {
+          // Ignore reader cleanup errors
+        }
+      }
+      
       controllerRef.current = null;
     }
   }
