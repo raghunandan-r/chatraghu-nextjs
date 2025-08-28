@@ -66,9 +66,12 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
 
         if (done) {
           // Handle any remaining partial chunk
+          console.log('STREAM_DON at ', Date.now());
           const remaining = decoder.decode(undefined, { stream: false });
           if (remaining) appendText(remaining);
+          console.log('CALLING setBusy(false) at ', Date.now());
           setBusy(false);
+          console.log('setBusy FALSE at ', Date.now());
           break;
         }
 

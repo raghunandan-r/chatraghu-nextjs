@@ -40,7 +40,9 @@ export function useSpinnerStatus(busy: boolean, spinnerFrames: string[], loading
   // Main spinner effect
   useEffect(() => {
     // Clear everything when not busy
+    console.log(' busy state changed to ', busy, ' at ', Date.now());
     if (!busy) {
+      console.log(' clearing timers at ', Date.now());
       clearTimers();
       setSpinnerChar('');
       setStatusText('');
