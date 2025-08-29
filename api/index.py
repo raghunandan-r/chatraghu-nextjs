@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from typing import List, Optional
 import httpx
@@ -89,6 +90,12 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
                         if not chunk:
                             continue
                         yield chunk
+                    
+                    logger.info("Stream completed", extra={
+                        "thread_id": chat_request.get("messages", [{}])[0].get("thread_id"),
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
                 except httpx.ReadTimeout:
                     logger.warning("Stream read timeout", extra={
                         "thread_id": chat_request.get("messages", [{}])[0].get("thread_id")
@@ -140,6 +147,7 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
             }]
         }
 
+        # The streaming response remains identical to current implementation
         response = StreamingResponse(
             stream_text(chat_request, protocol),
             media_type='text/event-stream',

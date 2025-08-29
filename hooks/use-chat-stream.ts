@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-const STREAM_TIMEOUT_MS = 15000; // 15 seconds
+const STREAM_TIMEOUT_MS = 6000; // 15 seconds
 
 type SendDeps = {
   appendText: (t: string) => void;
@@ -95,8 +95,13 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
       }
       appendNewline();
     } catch (err: any) {
+      console.log('🔍 STREAM ERROR at', Date.now(), 'error:', err);
       setBusy(false);
       const isTimeout = err?.name === 'AbortError' && err.message === 'timeout';
+      
+      if (isTimeout) {
+        console.log('🔍 FRONTEND TIMEOUT TRIGGERED - stream was hanging');
+      }
       
       if (err?.name === 'AbortError') {
         appendText(isTimeout ? '[request timed out, please try again later.]' : '^C');
