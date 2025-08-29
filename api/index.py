@@ -41,6 +41,10 @@ else:
             "continuous_profiling_auto_start": True,        
         },
     )
+    import logging
+    test_logger = logging.getLogger()  # Root logger
+    test_logger.error("SENTRY TEST: This error should appear in Issues")
+    test_logger.info("SENTRY TEST: This info should appear somewhere")
 
 class ClientMessage(BaseModel):
     role: str
