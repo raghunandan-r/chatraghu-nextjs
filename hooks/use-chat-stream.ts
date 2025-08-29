@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-const STREAM_TIMEOUT_MS = 12000; // 12 seconds
+const STREAM_TIMEOUT_MS = 15000; // 15 seconds
 
 type SendDeps = {
   appendText: (t: string) => void;

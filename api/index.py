@@ -41,10 +41,10 @@ else:
             "continuous_profiling_auto_start": True,        
         },
     )
-    import logging
-    test_logger = logging.getLogger()  # Root logger
-    test_logger.error("SENTRY TEST: This error should appear in Issues")
-    test_logger.info("SENTRY TEST: This info should appear somewhere")
+    # import logging
+    # test_logger = logging.getLogger()  # Root logger
+    # test_logger.error("SENTRY TEST: This error should appear in Issues")
+    # test_logger.info("SENTRY TEST: This info should appear somewhere")
 
 class ClientMessage(BaseModel):
     role: str
@@ -102,6 +102,8 @@ async def stream_text(chat_request: dict, protocol: str = 'data'):
                         if not chunk:
                             continue
                         yield chunk
+                    
+                    yield b'\n\n' # explicit termination signal ahm.
                     
                     logger.info("Stream completed", extra={
                         "thread_id": chat_request.get("messages", [{}])[0].get("thread_id"),
@@ -166,7 +168,7 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
             headers={
                 'x-vercel-ai-data-stream': 'v1',
                 'cache-control': 'no-cache, no-transform',
-                'connection': 'keep-alive',
+                'connection': 'close', # changed from keep-alive to close
                 'x-accel-buffering': 'no',
             }
         )
