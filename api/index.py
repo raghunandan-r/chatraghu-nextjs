@@ -10,41 +10,10 @@ from utils.logger import logger
 import uuid
 from httpx import AsyncClient, AsyncHTTPTransport
 
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.asyncio import AsyncioIntegration
-from sentry_sdk.integrations.logging import LoggingIntegration
-import logging
 
 # Load .env files only if they exist
 if os.path.exists('.env'):
     load_dotenv('.env')
-else:
-    sentry_sdk.init(
-        dsn=os.getenv("SENTRY_DSN"),    
-        environment="production",  
-        traces_sample_rate=1.0,   
-        profiles_sample_rate=1.0, 
-        integrations=[
-            FastApiIntegration(),
-            AsyncioIntegration(),
-            # ADD THIS: LoggingIntegration for capturing logs
-            LoggingIntegration(
-                level=logging.INFO,        # Capture INFO+ as breadcrumbs
-                event_level=logging.INFO,  # Send INFO+ as events to Sentry
-            ),
-        ],
-        send_default_pii=True,
-        # Enable logs to be sent to Sentry
-        enable_logs=True,
-        _experiments={
-            "continuous_profiling_auto_start": True,        
-        },
-    )
-    # import logging
-    # test_logger = logging.getLogger()  # Root logger
-    # test_logger.error("SENTRY TEST: This error should appear in Issues")
-    # test_logger.info("SENTRY TEST: This info should appear somewhere")
 
 class ClientMessage(BaseModel):
     role: str
