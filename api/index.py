@@ -7,22 +7,16 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request as FastAPIRequest, HTTPException
 from fastapi.responses import StreamingResponse
-# import redis.asyncio as AsyncRedis
-# import redis as SyncRedis
 from upstash_redis.asyncio import Redis as AsyncRedis
 from upstash_redis import Redis as SyncRedis
 from upstash_ratelimit import Ratelimit, SlidingWindow
 from utils.logger import logger
 from starlette.concurrency import run_in_threadpool
-from utils.logger import logHandler
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up logging
-logger = logging.getLogger("root")
-logger.setLevel(logging.INFO)
-logging.getLogger().addHandler(logHandler)
+# Blocking httpx logs for chunks that crowd out everything else
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
