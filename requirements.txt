@@ -39,3 +39,6 @@ requests>=2.25.1
 backoff>=1.10.0
 python-json-logger>=2.0.7
 sentry-sdk[fastapi]==2.35.0
+redis==6.4.0
+upstash-redis==1.4.0
+upstash-ratelimit==1.1.0
