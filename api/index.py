@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import re
 import uuid
@@ -13,9 +14,17 @@ from upstash_redis import Redis as SyncRedis
 from upstash_ratelimit import Ratelimit, SlidingWindow
 from utils.logger import logger
 from starlette.concurrency import run_in_threadpool
+from utils.logger import logHandler
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Set up logging
+logger = logging.getLogger("root")
+logger.setLevel(logging.INFO)
+logging.getLogger().addHandler(logHandler)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 # Initialize Redis and Rate Limiter from environment variables
 # redis = AsyncRedis.from_url(os.getenv("UPSTASH_REDIS_REST_URL"))

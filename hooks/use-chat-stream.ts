@@ -123,7 +123,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
    * @param threadId The ID of the chat thread to recover.
    */
   async function recoverStream(streamId: string) {
-    appendText('\n[connection lost, attempting to recover...]');
+    appendText('\n... ');
     
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -141,7 +141,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
         throw new Error(`Recovery failed: ${res.status}`);
       }
       
-      appendText('[recovery successful, resuming stream...]\n');
+      // appendText('[recovery successful, resuming stream...]\n');
       const reader = res.body.getReader();
       // Reuse the same stream reading logic.
       await readStream(reader, true);
@@ -217,7 +217,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
       // console.log('🔍 STREAM ERROR at', Date.now(), 'error:', err);
 
       // Check if the error was a timeout and if we have a unique stream_id to recover.
-      const isTimeout = err?.name === 'AbortError' && err.message === 'timeout';
+      const isTimeout = err?.name === 'AbortError' && controllerRef.current?.signal.reason === 'timeout';
       
       if (isTimeout && streamIdRef.current) {
         // console.log('🔍 FRONTEND TIMEOUT TRIGGERED - attempting recovery.');
@@ -261,7 +261,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
     }
   }
 
-  return { busy, send } as const;
+  return { busy, send } as const;  
 }
 
 

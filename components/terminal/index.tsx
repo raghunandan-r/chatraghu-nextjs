@@ -37,7 +37,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
   useEffect(() => {
     setBusyForSpinner(busy);
   }, [busy]);
-
+  
   // Ensure focus returns to input after streaming completes
   useEffect(() => {
     if (!busy) requestAnimationFrame(() => caret.inputRef.current?.focus());
