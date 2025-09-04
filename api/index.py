@@ -101,7 +101,7 @@ async def trigger_stream_generation(thread_id: str, stream_id: str, chat_request
     }
     
     # The backend needs both the thread_id for history and a unique stream_id for the Redis key.
-    backend_request = {**chat_request, "thread_id": thread_id, "stream_id": stream_id}
+    backend_request = {**chat_request, "thread_id": thread_id, "stream_id": stream_id, "query_type": "resume"}
     
     logger.info("Triggering stream generation on backend", extra={"thread_id": thread_id, "stream_id": stream_id, "request": chat_request})
 
@@ -164,7 +164,9 @@ async def consume_stream_from_redis(stream_id: str):
             # Check if we got any data
             has_data = (response and len(response) > 0 and 
                        len(response[0]) >= 2 and response[0][1] and len(response[0][1]) > 0)
-            
+            if has_data:
+                start_time = datetime.datetime.now()
+                        
             if not has_data:
                 if last_processed_id == "0-0":
                     # No pending messages, switch to listening for new ones
