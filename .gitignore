@@ -17,6 +17,7 @@
 .env
 __pycache__
 plan/
+docs/
 
 # production
 /build
@@ -24,6 +25,9 @@ plan/
 # misc
 .DS_Store
 *.pem
+
+# Docker
+.docker
 
 # debug
 npm-debug.log*

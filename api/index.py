@@ -33,6 +33,10 @@ ratelimit = Ratelimit(
 backend_url = os.getenv("API_URL")
 backend_api_key = os.getenv("API_KEY")
 
+# Cron job configuration
+CRON_SECRET = os.getenv("CRON_SECRET")
+CRON_ALERT_WEBHOOK = os.getenv("CRON_ALERT_WEBHOOK")
+
 
 def sanitize_content(content: str) -> str:
     """
@@ -91,6 +95,11 @@ def sanitize_content(content: str) -> str:
 
 
 app = FastAPI()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker and monitoring."""
+    return {"status": "healthy", "service": "chatraghu-nextjs-api"}
 
 async def trigger_stream_generation(thread_id: str, stream_id: str, chat_request: dict) -> None:
     """Triggers the backend to start generating the stream."""
@@ -369,3 +378,62 @@ async def recover_chat_stream(stream_id: str):
             'X-Accel-Buffering': 'no'
         }
     )
+
+@app.get("/api/cron/keep_alive")
+async def cron_keep_alive(request: FastAPIRequest):
+    """
+    Scheduled keep-alive for Upstash Redis.
+    Performs a write operation to ensure persistence and prevent free-tier hibernation.
+    
+    Authentication:
+    - Production: Vercel sends 'user-agent: vercel-cron/1.0' header automatically
+    - Local/Manual: Use 'Authorization: Bearer <CRON_SECRET>' header
+    """
+    # 1. Verify Authorization (dual-layer: Vercel cron OR Bearer token)
+    user_agent = request.headers.get("user-agent", "")
+    auth_header = request.headers.get("authorization", "")
+    
+    is_vercel_cron = "vercel-cron" in user_agent.lower()
+    is_valid_token = CRON_SECRET and auth_header == f"Bearer {CRON_SECRET}"
+    
+    if not (is_vercel_cron or is_valid_token):
+        logger.warning("Unauthorized keep-alive attempt", extra={
+            "user_agent": user_agent,
+            "has_auth_header": bool(auth_header)
+        })
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # 2. Perform Write Operation (Required for Upstash "Active" status)
+    try:
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        key = "system:health:keep_alive"
+        
+        # Use redis.execute([...]) for Upstash compatibility (same pattern as XGROUP commands)
+        await redis.execute(["SET", key, timestamp, "EX", "604800"])
+        
+        logger.info("Redis keep-alive successful", extra={"timestamp": timestamp})
+        return {
+            "status": "healthy", 
+            "timestamp": timestamp, 
+            "message": "Upstash activity recorded"
+        }
+        
+    except Exception as e:
+        logger.exception("Redis keep-alive failed", extra={"error": str(e)})
+        
+        # Optional: Send alert to webhook
+        if CRON_ALERT_WEBHOOK:
+            try:
+                async with httpx.AsyncClient(timeout=5) as client:
+                    await client.post(
+                        CRON_ALERT_WEBHOOK,
+                        json={
+                            "event": "redis_keep_alive_failed",
+                            "error": str(e),
+                            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        },
+                    )
+            except Exception as alert_error:
+                logger.warning("Alert webhook failed", extra={"hook_error": str(alert_error)})
+        
+        raise HTTPException(status_code=500, detail="Keep-alive failed")

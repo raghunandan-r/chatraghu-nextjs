@@ -13,24 +13,23 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
 
           <p className="intro-section"><strong>I&apos;m currently...</strong></p>
           <ul className="intro-list">
-            <li>volunteering at <a href="https://chieac.org/chicagodatascience" target="_blank" className="intro-link" rel="noreferrer">CHIEAC</a>, helping build GenAI tools for the community</li>
+            <li>working at <a href="https://www.housingpartnership.net/" target="_blank" className="intro-link" rel="noreferrer">HPN</a>, setting up the data stack for affordable housing</li>
           </ul>
 
           <p className="intro-section"><strong>Previously I...</strong></p>
           <ul className="intro-list">
             <li>graduated from <a href="https://www.rit.edu/" target="_blank" className="intro-link" rel="noreferrer">Rochester Institute of Technology</a> with a MSc in Data Science</li>
             <li>interned at <a href="https://www.micron.com/" target="_blank" className="intro-link" rel="noreferrer">Micron</a>, where I built data tools</li>
-            <li>worked on b2b SaaS at <a href="https://www.freshworks.com/" target="_blank" className="intro-link" rel="noreferrer">Freshworks</a></li>
-            <li>worked on hyperlocal delivery at <a href="https://www.lynk.co.in/" target="_blank" className="intro-link" rel="noreferrer">Lynk</a></li>
-            <li>worked on FinTech at <a href="https://www.bankbazaar.com/" target="_blank" className="intro-link" rel="noreferrer">Bankbazaar</a></li>
+            <li>worked on <a href="https://www.freshworks.com/" target="_blank" className="intro-link" rel="noreferrer">b2b SaaS</a></li>
+             <li><a href="https://www.lynk.co.in/" target="_blank" className="intro-link" rel="noreferrer">hyperlocal delivery</a>
+            and  <a href="https://www.bankbazaar.com/" target="_blank" className="intro-link" rel="noreferrer">FinTech</a></li>
             <li>started out as a Developer at <a href="https://www.dxc.com/" target="_blank" className="intro-link" rel="noreferrer">DXC</a></li>
           </ul>
 
-          <p className="intro-section"><strong>Projects I&apos;m working on...</strong></p>
+          <p className="intro-section"><strong>Projects I&apos;ve worked on...</strong></p>
           <ul className="intro-list">            
-            <li><a href="https://github.com/raghunandan-r/chatRaghu-backend" target="_blank" className="intro-link" rel="noreferrer">raghu.fyi</a> - backend engine with RAG, built with FastAPI, OpenAI &amp; Pinecone</li>
-            <li><a href="https://github.com/raghunandan-r/data-engineer-handbook" target="_blank" className="intro-link" rel="noreferrer">dataengineer-handbook</a> - playing with with Spark, Flink &amp; Postgres</li>
-            <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li>
+            <li><a href="https://app.hex.tech/019794be-cfa2-700a-986e-d228edf3c6bf/hex/Evaluating-AI-at-raghufyi-030GQtNRWQfVqmkZFcpXFp/draft/logic?view=notebook" target="_blank" className="intro-link" rel="noreferrer">know-your-rights</a> - backend engine with RAG, built with FastAPI, OpenRouter &amp; Pinecone</li>
+            {/* <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li> */}
           </ul>          
           <p className="intro-section spaced"><strong>Questions? Ask away!</strong></p>
         </div>

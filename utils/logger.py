@@ -26,7 +26,7 @@ else:
             # ADD THIS: LoggingIntegration for capturing logs
             LoggingIntegration(
                 level=logging.INFO,        # Capture INFO+ as breadcrumbs
-                event_level=logging.INFO,  # Send INFO+ as events to Sentry
+                event_level=logging.WARNING,  # Send INFO+ as events to Sentry
             ),
         ],
         send_default_pii=True,
@@ -38,7 +38,6 @@ else:
     )
     
     logger = logging.getLogger()  # Root logger
-    logger.error("SENTRY TEST: This error should appear in Issues")
     logger.info("SENTRY TEST: This info should appear somewhere")
 
 
@@ -54,7 +53,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 def setup_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(CustomJsonFormatter(

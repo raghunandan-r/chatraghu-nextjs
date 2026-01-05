@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatraghu-nextjs
+    ports:
+      - "3001:3001"  # Next.js dev server
+      - "8000:8000"  # FastAPI server
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot-reload (development)
+      - .:/app
+      # Exclude node_modules and .next to use container's versions
+      - /app/node_modules
+      - /app/.next
+      - /app/__pycache__
+    restart: unless-stopped
+    stdin_open: true
+    tty: true

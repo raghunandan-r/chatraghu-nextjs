@@ -1,0 +1,51 @@
+# Production Dockerfile - optimized multi-stage build
+
+# Stage 1: Build Next.js application
+FROM node:20-slim as nextjs-builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy Next.js source and build
+COPY . .
+RUN npm run build
+
+# Stage 2: Python + Node.js runtime
+FROM node:20-slim
+
+# Install Python 3.11
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3.11 /usr/bin/python && \
+    ln -s /usr/bin/python3.11 /usr/bin/python3
+
+WORKDIR /app
+
+# Copy Python requirements and install
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy built Next.js app from builder
+COPY --from=nextjs-builder /app/.next ./.next
+COPY --from=nextjs-builder /app/public ./public
+COPY --from=nextjs-builder /app/package.json ./
+COPY --from=nextjs-builder /app/node_modules ./node_modules
+
+# Copy application code
+COPY . .
+
+# Expose ports
+EXPOSE 3001 8000
+
+# Production command: run Next.js production server and FastAPI
+CMD sh -c "npm run start & python3 -m uvicorn api.index:app --host 0.0.0.0 --port 8000"

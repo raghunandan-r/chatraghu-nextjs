@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "fastapi-dev": "pip install -r requirements.txt && python -m uvicorn api.index:app --reload --port 8000 --host 127.0.0.1 --reload-exclude node_modules",
+    "fastapi-dev": "pip install --break-system-packages -r requirements.txt && python -m uvicorn api.index:app --reload --port 8000 --host 0.0.0.0 --reload-exclude node_modules",
     "next-dev": "next dev -p 3001",
     "dev": "concurrently \"npm run next-dev\" \"npm run fastapi-dev\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:shell": "docker-compose exec app bash"
   },
   "dependencies": {
     "@types/node": "20.2.4",

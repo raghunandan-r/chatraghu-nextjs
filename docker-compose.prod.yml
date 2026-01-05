@@ -1,0 +1,19 @@
+# Production docker-compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Remove volume mounts for production (use baked-in code)
+      # - .:/app
+    command: >
+      sh -c "
+        npm run build &&
+        npm run start &
+        python3 -m uvicorn api.index:app --host 0.0.0.0 --port 8000
+      "
