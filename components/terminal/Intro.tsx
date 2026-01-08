@@ -32,7 +32,7 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
             {/* <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li> 
           </ul>           
 */}
-          <p className="intro-section spaced"><strong>type 'help to get started!</strong></p>
+          <p className="intro-section spaced"><strong>type &apos;help&apos; to get started!</strong></p>
         </div>
         <div className="col">
           <span className="cmd">Type to start</span>
