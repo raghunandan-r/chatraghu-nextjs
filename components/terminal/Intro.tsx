@@ -9,8 +9,8 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
       <div className="help">
         <div className="col intro">
           <p className="intro-line">Pronounced like the pasta sauce, just with a different accent.</p>
-          <p className="intro-line">I&apos;m based in nyc and I&apos;ve been building things for {yearsSince2013} years.</p>
-
+          <p className="intro-line">I&apos;m based in nyc and I&apos;ve couldn&apos;t be more excited to be back building!</p>
+{/* 
           <p className="intro-section"><strong>I&apos;m currently...</strong></p>
           <ul className="intro-list">
             <li>working at <a href="https://www.housingpartnership.net/" target="_blank" className="intro-link" rel="noreferrer">HPN</a>, setting up the data stack for affordable housing</li>
@@ -29,9 +29,10 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
           <p className="intro-section"><strong>Projects I&apos;ve worked on...</strong></p>
           <ul className="intro-list">            
             <li><a href="https://app.hex.tech/019794be-cfa2-700a-986e-d228edf3c6bf/hex/Evaluating-AI-at-raghufyi-030GQtNRWQfVqmkZFcpXFp/draft/logic?view=notebook" target="_blank" className="intro-link" rel="noreferrer">know-your-rights</a> - backend engine with RAG, built with FastAPI, OpenRouter &amp; Pinecone</li>
-            {/* <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li> */}
-          </ul>          
-          <p className="intro-section spaced"><strong>Questions? Ask away!</strong></p>
+            {/* <li><a href="https://github.com/raghunandan-r/chatraghu-gcp-elt-pipeline" target="_blank" className="intro-link" rel="noreferrer">chatRaghu_elt</a> - viz and LLM-as-judge evals, built with GCP, BigQuery, dbt &amp; Hex</li> 
+          </ul>           
+*/}
+          <p className="intro-section spaced"><strong>type 'help to get started!</strong></p>
         </div>
         <div className="col">
           <span className="cmd">Type to start</span>

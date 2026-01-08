@@ -22,7 +22,7 @@ type Props = {
   spinnerChar: string;
   statusText: string;
   startedStreaming: boolean;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => void | Promise<void>;
   inputHistoryApi: InputHistoryApi;
   refsFromCaretHook: CaretRefs;
   updateCaretAndSelection: () => void;
@@ -49,13 +49,13 @@ export default function InputBar({
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!input.trim() || busy) return;
         inputHistoryApi.pushEntry(input);
         const toSend = input;
         setInput('');
-        onSubmit(toSend);
+        await onSubmit(toSend);
       }}
       className="row"
     >
@@ -68,7 +68,7 @@ export default function InputBar({
             setInput(e.target.value);
           }}
           enterKeyHint="send"
-          onKeyDown={(e) => {
+          onKeyDown={async (e) => {
             // update caret on navigation keys before React updates value
             requestAnimationFrame(updateCaretAndSelection);
             if (e.key === 'Enter') {
@@ -77,7 +77,7 @@ export default function InputBar({
                 inputHistoryApi.pushEntry(input);
                 const toSend = input;
                 setInput('');
-                onSubmit(toSend);
+                await onSubmit(toSend);
               }
               return;
             }

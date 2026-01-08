@@ -13,6 +13,10 @@ import { useCaretSelection } from '@/hooks/use-caret-selection';
 import { useChatStream } from '@/hooks/use-chat-stream';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useInputHistory } from '@/hooks/use-input-history';
+import { useCommandRouter } from '@/hooks/use-command-router';
+
+// Backend can be disabled via environment variable
+const BACKEND_ENABLED = process.env.NEXT_PUBLIC_BACKEND_ENABLED !== 'false';
 
 export default function Terminal({ yearsSince2013 }: { yearsSince2013: string }) {
   const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLPreElement>();
@@ -20,7 +24,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
 
   const threadIdRef = useThreadId();
   const { lines, setLines, totalCharsRef } = useTerminalHistory();
-  const { appendText, appendPrefix, appendNewline } = useBufferedLines(lines, setLines, totalCharsRef);
+  const { appendText, appendPrefix, appendNewline, clear } = useBufferedLines(lines, setLines, totalCharsRef);
   const [busyForSpinner, setBusyForSpinner] = useState(false);
   const spinner = useSpinnerStatus(busyForSpinner, spinnerFrames, loadingTexts);
   const caret = useCaretSelection();
@@ -33,14 +37,27 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
   });
   const inputHistoryApi = useInputHistory();
 
-  // Keep spinner hook in sync with busy state
+  // Command router handles all input routing
+  const { execute } = useCommandRouter({
+    appendText,
+    appendPrefix,
+    appendNewline,
+    clear,
+    send,
+    backendAvailable: true, // TODO: Add backend availability tracking in PR 3
+    backendEnabled: BACKEND_ENABLED,
+  });
+
+  // Keep spinner in sync with busy state
   useEffect(() => {
     setBusyForSpinner(busy);
   }, [busy]);
   
   // Ensure focus returns to input after streaming completes
   useEffect(() => {
-    if (!busy) requestAnimationFrame(() => caret.inputRef.current?.focus());
+    if (!busy) {
+      requestAnimationFrame(() => caret.inputRef.current?.focus());
+    }
   }, [busy, caret.inputRef]);
 
   return (
@@ -58,7 +75,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
           spinnerChar={spinner.spinnerChar}
           statusText={spinner.statusText}
           startedStreaming={spinner.startedStreaming}
-          onSubmit={send}
+          onSubmit={execute}
           inputHistoryApi={inputHistoryApi}
           refsFromCaretHook={caret}
           updateCaretAndSelection={caret.updateCaretAndSelection}
