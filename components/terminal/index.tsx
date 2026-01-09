@@ -4,6 +4,7 @@ import Titlebar from './Titlebar';
 import Intro from './Intro';
 import Stream from './Stream';
 import InputBar from './Input';
+import CommandShortcuts from './CommandShortcuts';
 import { spinnerFrames, loadingTexts } from './constants';
 import { useThreadId } from '@/hooks/use-thread-id';
 import { useTerminalHistory } from '@/hooks/use-terminal-history';
@@ -60,6 +61,12 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
     }
   }, [busy, caret.inputRef]);
 
+  // Handle shortcut button clicks
+  const handleShortcut = (commandName: string) => {
+    execute(commandName);
+    caret.inputRef.current?.focus();
+  };
+
   return (
     <div className="shell">
       <div className="window">
@@ -80,6 +87,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
           refsFromCaretHook={caret}
           updateCaretAndSelection={caret.updateCaretAndSelection}
         />
+        <CommandShortcuts onCommand={handleShortcut} disabled={busy} />
       </div>
 
       <style jsx global>{`
@@ -106,7 +114,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
         .window {
           position: relative;
           display: grid;
-          grid-template-rows: 36px 1fr auto;
+          grid-template-rows: 36px 1fr auto auto;
           max-width: 980px;
           height: 100dvh;
           margin: 0 auto;
