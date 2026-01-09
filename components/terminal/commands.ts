@@ -137,8 +137,6 @@ function generateHelpText(): string {
     output += `  › ${cmd.name.padEnd(12)} ${cmd.description}${aliases}\n`;
   }
 
-  output += '\n  Or type any question to ask the AI about my background.\n';
-
   return output;
 }
 

@@ -62,34 +62,14 @@ export function useCommandRouter(deps: RouterDeps) {
         return;
       }
 
-      // 2. No command match - try LLM if available
-      // Note: send() will echo the input, so we don't echo here
-      if (backendEnabled && backendAvailable) {
-        await send(trimmed);
-        return;
-      }
-
-      // 3. Backend not available - show suggestions
-      // Echo user input for "command not found" case
+      // 2. No command match - show graceful message (backend is disabled)
+      // Echo user input
       appendNewline();
       appendText(`> ${trimmed}`);
       appendNewline();
 
       appendPrefix();
-      const suggestions = findSimilarCommands(trimmed);
-
-      if (suggestions.length > 0) {
-        appendText(`  Command not found: "${trimmed}"\n`);
-        appendText(`  Did you mean: ${suggestions.join(', ')}?\n`);
-      } else {
-        appendText(`  Command not found: "${trimmed}"\n`);
-        appendText('  Type "help" to see available commands.\n');
-      }
-
-      if (!backendEnabled) {
-        appendText('  (AI backend is currently disabled)\n');
-      }
-
+      appendText('  raghu has moved on to bigger things..\n');
       appendNewline();
     },
     [appendText, appendPrefix, appendNewline, clear, send, backendAvailable, backendEnabled]

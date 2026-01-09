@@ -11,6 +11,7 @@ type SendDeps = {
 
 export function useChatStream({ appendText, appendPrefix, appendNewline, setStartedStreaming, threadIdRef }: SendDeps) {
   const [busy, setBusy] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(false); // Backend is disabled
   const controllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const streamIdRef = useRef<string | null>(null); // To store the unique ID for recovery
@@ -158,6 +159,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
   async function send(msg: string) {
     setBusy(true);
     setStartedStreaming(false);
+    setBackendAvailable(false); // Optimistically reset on new attempt (but backend is disabled)
     appendNewline();
     appendText(`> ${msg}`);
     appendNewline();
@@ -238,6 +240,14 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
         appendText(isTimeout ? '[request timed out, please try again later.]' : '^C');
         appendNewline();
       } else {
+        // Track backend availability for specific errors
+        if (
+          err?.message?.includes('Backend service unavailable') ||
+          err?.message?.includes('Failed to fetch') ||
+          err?.name === 'TypeError' // Network error
+        ) {
+          setBackendAvailable(false);
+        }
         appendNewline();
         appendText(err?.message || '[error connecting to raghu\'s ai]');
         appendNewline();
@@ -261,7 +271,7 @@ export function useChatStream({ appendText, appendPrefix, appendNewline, setStar
     }
   }
 
-  return { busy, send } as const;  
+  return { busy, send, backendAvailable } as const;  
 }
 
 

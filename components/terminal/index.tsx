@@ -5,6 +5,7 @@ import Intro from './Intro';
 import Stream from './Stream';
 import InputBar from './Input';
 import CommandShortcuts from './CommandShortcuts';
+import StatusIndicator from './StatusIndicator';
 import { spinnerFrames, loadingTexts } from './constants';
 import { useThreadId } from '@/hooks/use-thread-id';
 import { useTerminalHistory } from '@/hooks/use-terminal-history';
@@ -16,8 +17,8 @@ import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useInputHistory } from '@/hooks/use-input-history';
 import { useCommandRouter } from '@/hooks/use-command-router';
 
-// Backend can be disabled via environment variable
-const BACKEND_ENABLED = process.env.NEXT_PUBLIC_BACKEND_ENABLED !== 'false';
+// Backend is disabled - raghu has moved on to bigger things
+const BACKEND_ENABLED = false;
 
 export default function Terminal({ yearsSince2013 }: { yearsSince2013: string }) {
   const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLPreElement>();
@@ -29,7 +30,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
   const [busyForSpinner, setBusyForSpinner] = useState(false);
   const spinner = useSpinnerStatus(busyForSpinner, spinnerFrames, loadingTexts);
   const caret = useCaretSelection();
-  const { busy, send } = useChatStream({
+  const { busy, send, backendAvailable } = useChatStream({
     appendText,
     appendPrefix,
     appendNewline,
@@ -45,7 +46,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
     appendNewline,
     clear,
     send,
-    backendAvailable: true, // TODO: Add backend availability tracking in PR 3
+    backendAvailable,
     backendEnabled: BACKEND_ENABLED,
   });
 
@@ -88,6 +89,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
           updateCaretAndSelection={caret.updateCaretAndSelection}
         />
         <CommandShortcuts onCommand={handleShortcut} disabled={busy} />
+        <StatusIndicator backendEnabled={BACKEND_ENABLED} backendAvailable={backendAvailable} />
       </div>
 
       <style jsx global>{`
@@ -114,7 +116,7 @@ export default function Terminal({ yearsSince2013 }: { yearsSince2013: string })
         .window {
           position: relative;
           display: grid;
-          grid-template-rows: 36px 1fr auto auto;
+          grid-template-rows: 36px 1fr auto auto auto;
           max-width: 980px;
           height: 100dvh;
           margin: 0 auto;
