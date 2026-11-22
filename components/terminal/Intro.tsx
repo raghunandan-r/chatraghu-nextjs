@@ -9,7 +9,7 @@ export default function Intro({ yearsSince2013 }: { yearsSince2013: string }) {
       <div className="help">
         <div className="col intro">
           <p className="intro-line">Pronounced like the pasta sauce, just with a different accent.</p>
-          <p className="intro-line">I&apos;m based in nyc and I&apos;ve couldn&apos;t be more excited to be back building!</p>
+          <p className="intro-line">I&apos;m based in NYC and I couldn&apos;t be more excited to be problem solving!</p>
 {/* 
           <p className="intro-section"><strong>I&apos;m currently...</strong></p>
           <ul className="intro-list">
